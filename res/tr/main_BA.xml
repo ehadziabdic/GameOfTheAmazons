@@ -1,0 +1,55 @@
+<?xml version='1.0'?>
+<DevRes>
+<Translations>
+	<!-- Title bar -->
+    <Res id="appTitle" tr="Igra Amazonki"/>
+    <Res id="settings" tr="Postavke"/>
+    <Res id="settingsTT" tr="Podesite izgled, težinu i jezik. Jezik zahtijeva ponovno pokretanje aplikacije."/>
+    <Res id="newGame" tr="Nova igra"/>
+    <Res id="newGameTT" tr="Započnite novu igru."/>
+    <Res id="undo" tr="Poništi"/>
+    <Res id="undoTT" tr="Poništite posljednji potez kraljice, ako strijela još nije ispaljena."/>
+
+	<!-- Settings -->
+    <Res id="boardSize" tr="Veličina table"/>
+    <Res id="boardStyle" tr="Stil table"/>
+    <Res id="difficulty" tr="Težina"/>
+    <Res id="language" tr="Jezik"/>
+    <Res id="langEnglish" tr="Engleski"/>
+    <Res id="langBosnian" tr="Bosanski"/>
+
+	<!-- Difficulty -->
+    <Res id="Easy" tr="Lagano"/>
+	<Res id="EasyTT" tr="Prebaci na Laganu težinu"/>
+    <Res id="Medium" tr="Srednje"/>
+	<Res id="MediumTT" tr="Prebaci na Srednju težinu"/>
+    <Res id="Hard" tr="Teško"/>
+	<Res id="HardTT" tr="Prebaci na Tešku težinu"/>
+
+	<!-- Themes -->
+	<Res id="woodenTheme" tr="Drveni stil"/>
+	<Res id="blackWhiteTheme" tr="Crno-bjeli stil"/>
+	<Res id="greenTheme" tr="Travnati stil"/>
+    <Res id="blueTheme" tr="Ledeni stil"/>
+    <Res id="roseTheme" tr="Ljubavni stil"/>
+
+	<!-- Status messages -->
+    <Res id="statusSelectQueen" tr="STATUS: Odaberite kraljicu za pomjeranje"/>
+    <Res id="statusSelectDestination" tr="STATUS: Odaberite odredište kraljice"/>
+    <Res id="statusSelectArrow" tr="STATUS: Odaberite metu za strijelu. Ako želite otkazati, kliknite na dugme Poništi."/>
+    <Res id="statusAiThinking" tr="STATUS: AI razmišlja..."/>
+    <Res id="statusGameFinished" tr="STATUS: Igra završena"/>
+    <Res id="aiThinking" tr="AI razmišlja..."/>
+
+	<!-- Game Over messages -->
+    <Res id="gameOver" tr="Igra je gotova"/>
+    <Res id="msgYouWin" tr="Osvojili ste tablu!"/>
+    <Res id="msgYouLose" tr="Nema preostalih poteza. Izgubili ste."/>
+
+	<!-- Restart -->
+    <Res id="RestartRequired" tr="Ponovo pokrenite aplikaciju"/>
+    <Res id="RestartRequiredInfo" tr="Neke od promijenjenih postavki zahtijevaju ponovno pokretanje aplikacije da bi stupile na snagu"/>
+    <Res id="Restart" tr="Ponovo pokreni"/>
+    <Res id="DoNoRestart" tr="Nemoj ponovo pokrenuti"/>
+</Translations>
+</DevRes>

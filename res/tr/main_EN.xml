@@ -1,0 +1,57 @@
+<?xml version='1.0'?>
+<DevRes>
+    <Translations>
+        <!-- Title bar -->
+        <Res id="appTitle" tr="Game of The Amazons"/>
+        <Res id="settings" tr="Settings"/>
+        <Res id="settingsTT" tr="Adjust appereance, difficulty and language. Language requires app resart."/>
+        <Res id="newGame" tr="New Game"/>
+        <Res id="newGameTT" tr="Start new game."/>
+        <Res id="undo" tr="Undo"/>
+        <Res id="undoTT" tr="Undo last queen move if arrow isnt fired yet."/>
+        <Res id="cancel" tr="Stop AI"/>
+        <Res id="cancelTT" tr="Stop AI Thinking process, so game can be turned of safetly."/>
+
+        <!-- Settings -->
+        <Res id="boardSize" tr="Board Size"/>
+        <Res id="boardStyle" tr="Board Style"/>
+        <Res id="difficulty" tr="Difficulty"/>
+        <Res id="language" tr="Language"/>
+        <Res id="langEnglish" tr="English"/>
+        <Res id="langBosnian" tr="Bosnian"/>
+
+        <!-- Difficulty -->
+        <Res id="Easy" tr="Easy"/>
+        <Res id="EasyTT" tr="Switch to Easy mode"/>
+        <Res id="Medium" tr="Medium"/>
+        <Res id="MediumTT" tr="Switch to Medium mode"/>
+        <Res id="Hard" tr="Hard"/>
+        <Res id="HardTT" tr="Switch to Hard mode"/>
+
+        <!-- Themes -->
+        <Res id="woodenTheme" tr="Wooden Theme"/>
+        <Res id="blackWhiteTheme" tr="Black 'n' White Theme"/>
+        <Res id="greenTheme" tr="Grass Theme"/>
+        <Res id="blueTheme" tr="Ice Theme"/>
+        <Res id="roseTheme" tr="Love Theme"/>
+
+        <!-- Status messages -->
+        <Res id="statusSelectQueen" tr="STATUS: Select a queen to move"/>
+        <Res id="statusSelectDestination" tr="STATUS: Choose the queen's destination"/>
+        <Res id="statusSelectArrow" tr="STATUS: Select an arrow target, If you want to cancle click Undo buttoon"/>
+        <Res id="statusAiThinking" tr="STATUS: AI is thinking..."/>
+        <Res id="statusGameFinished" tr="STATUS: Game finished"/>
+        <Res id="aiThinking" tr="AI is thinking..."/>
+
+        <!-- Game Over messages -->
+        <Res id="gameOver" tr="Game Over"/>
+        <Res id="msgYouWin" tr="You conquered the board!"/>
+        <Res id="msgYouLose" tr="No moves left. You lost."/>
+
+        <!-- Restart -->
+        <Res id="RestartRequired" tr="Restart the application"/>
+        <Res id="RestartRequiredInfo" tr="Some of the changed settings require restarting the application to take effect"/>
+        <Res id="Restart" tr="Restart"/>
+        <Res id="DoNoRestart" tr="Don't restart"/>
+    </Translations>
+</DevRes>

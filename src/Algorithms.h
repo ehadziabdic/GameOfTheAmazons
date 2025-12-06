@@ -167,7 +167,7 @@ inline int minimax(GameState& state, int depth, int alpha, int beta, Player maxi
 
     Player current = state.currentPlayer();
     bool isMaximizing = current == maximizingPlayer;
-    auto moves = generyyateMovesForPlayer(state, current, moveCap);
+    auto moves = generateMovesForPlayer(state, current, moveCap);
 
     if (moves.empty()) {
         GameState evalState = state;

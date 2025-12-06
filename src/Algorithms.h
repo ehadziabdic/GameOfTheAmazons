@@ -10,8 +10,6 @@
 #include <atomic>
 #include <stdexcept>
 
-using namespace amazons;
-
 struct SearchCanceled : public std::exception {
     const char* what() const noexcept override {
         return "search canceled";
@@ -40,7 +38,7 @@ namespace detail {
         std::vector<bool> visited(static_cast<std::size_t>(dim * dim), false);
         auto indexOf = [dim](int row, int col) {
             return static_cast<std::size_t>(row * dim + col);
-        };
+            };
 
         std::queue<Position> frontier;
         frontier.push(start);
@@ -98,7 +96,7 @@ namespace detail {
             double normalized = 1.0 - (dist / maxDist);
             auto mobility = gatherReachableTiles(board, pos).size();
             return static_cast<double>(mobility) * 0.25 + normalized * 10.0;
-        };
+            };
 
         double score = 0.0;
         for (const auto& pos : state.queenPositions(player)) {
@@ -169,7 +167,7 @@ inline int minimax(GameState& state, int depth, int alpha, int beta, Player maxi
 
     Player current = state.currentPlayer();
     bool isMaximizing = current == maximizingPlayer;
-    auto moves = generateMovesForPlayer(state, current, moveCap);
+    auto moves = generyyateMovesForPlayer(state, current, moveCap);
 
     if (moves.empty()) {
         GameState evalState = state;
@@ -261,12 +259,12 @@ inline Move getBestMove(const GameState& state, Difficulty difficulty, const std
         GameState next = rootState.clone();
         applyMove(next, move);
         int heuristic = evaluate(next, perspective);
-        scored.push_back({move, heuristic});
+        scored.push_back({ move, heuristic });
     }
 
     std::sort(scored.begin(), scored.end(), [](const ScoredMove& a, const ScoredMove& b) {
         return a.heuristic > b.heuristic;
-    });
+        });
 
     Move bestMove = scored.front().move;
     int bestScore = std::numeric_limits<int>::min();

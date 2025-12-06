@@ -1,184 +1,218 @@
-// Implement rules here - Muhammed
-
+#pragma once
 #ifndef RULES_H
 #define RULES_H
 
-#include <vector>
-#include <array>
-#include <optional>
 #include <algorithm>
-#include <cassert>
+#include <limits>
+#include <array>
+#include <stdexcept>
+#include <vector>
 #include "GameState.h"
 
-namespace amazons {
+// Map a Player enum to its corresponding TileContent (queen piece)
+inline TileContent tileForPlayer(Player player) {
+	switch (player) {
+	case Player::White:
+		return TileContent::WhiteQueen;
+	case Player::Black:
+		return TileContent::BlackQueen;
+	default:
+		throw std::runtime_error("Invalid for tile mapping");
+	}
+}
+// Casts a "ray" from a starting position in direction (dx, dy) and collects all empty tiles until hitting a non-empty tile or border
+using PositionList = std::vector<Position>;
 
-    // Return the tile type (WhiteQueen or BlackQueen) belonging to a player
 
-    inline TileContent tileForPlayer(Player player) {
-        return (player == Player::White) ? TileContent::WhiteQueen : TileContent::BlackQueen;
-    }
+inline PositionList rayCast(const Board& board, const Position& start, int dx, int dy) {
+	PositionList tiles;
+	if (!board.isInsideBoard(start.row, start.col)) {
+		return tiles;
+	}
 
-    // Utility: checks if Position p exists inside PositionList list
+	int row = start.row + dx;
+	int col = start.col + dy;
 
-    inline bool containsPosition(const PositionList& list, const Position& p) {
-        return std::find(list.begin(), list.end(), p) != list.end();
-    }
+	// Continue moving in the direction until blocked
+	while (board.isInsideBoard(row, col)) {
+		auto tile = board.getTile(row, col);
+		if (tile != TileContent::Empty) {
+			break;
+		}
+		tiles.push_back({ row, col });
+		row += dx;
+		col += dy;
+	}
+	return tiles;
+}
 
-    // Gathers all tiles reachable from a starting position by sliding in the 8 directions
-    // Stops when reaching a non-empty tile or board edge
+// Returns all reachable tiles from a given position
+inline PositionList gatherReachableTiles(const Board& board, const Position& start) {
+	static constexpr std::array<std::pair<int, int>, 8> kDirections = {
+		std::pair{1, 0},  std::pair{-1, 0}, std::pair{0, 1},  std::pair{0, -1},
+		std::pair{1, 1},  std::pair{1, -1}, std::pair{-1, 1}, std::pair{-1, -1}
+	};
 
-    inline PositionList gatherReachableTiles(const Board& board, const Position& start) {
-        PositionList results;
-        // Iterate over all 8 queen directions
+	PositionList reachable;
+	for (const auto& [dx, dy] : kDirections) {
+		auto ray = rayCast(board, start, dx, dy);
+		reachable.insert(reachable.end(), ray.begin(), ray.end());
+	}
+	return reachable;
+}
 
-        for (const auto& d : DIRECTIONS) {
-            PositionList partial;
-            Position cur(start.row + d.first, start.col + d.second);
-            // Move until blocked or off-board
+// Check if a list of positions contains a specific target
+inline bool containsPosition(const PositionList& positions, const Position& target) {
+	return std::any_of(positions.begin(), positions.end(),
+		[&target](const Position& pos) { return pos == target; });
+}
 
-            while (board.isInsideBoard(cur)) {
-                if (board.getTile(cur) != TileContent::Empty) break;
-                partial.push_back(cur);
-                cur.row += d.first;
-                cur.col += d.second;
-            }
-            // Append reachable tiles from this direction
-            results.insert(results.end(), partial.begin(), partial.end());
-        }
-        return results;
-    }
+// Generates all legal moves for a given player
+// Uses moveCap to allow limiting results
+inline std::vector<Move> generateMovesForPlayer(const GameState& state, Player player,
+	std::size_t moveCap = (std::numeric_limits<std::size_t>::max)()) {
 
-    inline bool hasAnyLegalMove(const GameState& state, Player p);
-    inline bool evaluateWinState(GameState& state);
+	std::vector<Move> moves;
 
-    // Performs ray-casting from a start tile in direction (dr, dc)
-    // Collects all consecutive empty tiles
+	if (player == Player::None) {
+		return moves;
+	}
 
-    inline PositionList rayCast(const Board& board, const Position& start, int dr, int dc) {
-        PositionList out;
-        Position cur(start.row + dr, start.col + dc);
-        while (board.isInsideBoard(cur)) {
-            if (board.getTile(cur) != TileContent::Empty) break;
-            out.push_back(cur);
-            cur.row += dr;
-            cur.col += dc;
-        }
-        return out;
-    }
+	const auto& board = state.board();
+	const auto& queens = state.queenPositions(player);
 
-    // After moving a queen, generate all valid arrow tiles
-    // This is done by cloning the board, applying the queen move,
-    // then raycasting outward from the queen's new position
+	// For each queen belonging to the player
+	for (const auto& queenPos : queens) {
+		auto queenTargets = gatherReachableTiles(board, queenPos);
 
-    inline PositionList generateArrowTargetsAfterMove(const Board& board, const Position& queenFrom, const Position& queenTo) {
-        Board tmp = board; // copy like Code 2 does (instead of board.clone())
-        tmp.setTile(queenFrom, TileContent::Empty);
-        TileContent queenTile = board.getTile(queenFrom);
-        tmp.setTile(queenTo, queenTile);
+		// For each possible queen destination
+		for (const auto& queenDest : queenTargets) {
 
-        PositionList results;
-        for (const auto& d : DIRECTIONS) {
-            auto part = rayCast(tmp, queenTo, d.first, d.second);
-            results.insert(results.end(), part.begin(), part.end());
-        }
-        return results;
-    }
+			// Simulate the queen move
+			Board simulatedBoard = board;
+			simulatedBoard.setTile(queenPos.row, queenPos.col, TileContent::Empty);
+			simulatedBoard.setTile(queenDest.row, queenDest.col, tileForPlayer(player));
 
-    // Generates all possible moves for a player
-    // moveCap allows early cutoff (used for checking if any move exists)
+			// Now find arrow targets using modified board
+			auto arrowTargets = gatherReachableTiles(simulatedBoard, queenDest);
 
-    inline MoveList generateMovesForPlayer(
-        const GameState& state,
-        Player p,
-        std::optional<size_t> moveCap = std::nullopt
-    ) {
-        MoveList out;
-        const Board& board = state.board();
-        const auto& queens = state.queenPositions(p);
+			// Combine queen move + arrow shot into full moves
+			for (const auto& arrowDest : arrowTargets) {
+				moves.push_back({ player, queenPos, queenDest, arrowDest });
 
-        for (const Position& qpos : queens) {
-            auto qdests = gatherReachableTiles(board, qpos);
-            for (const Position& dest : qdests) {
+				// Stop early if moveCap exceeded
+				if (moves.size() >= moveCap)
+					return moves;
+			}
+		}
+	}
+	return moves;
+}
 
-                auto arrows = generateArrowTargetsAfterMove(board, qpos, dest);
-                for (const Position& a : arrows) {
-                    out.emplace_back(qpos, dest, a, p);
-                    if (moveCap && out.size() >= *moveCap) return out;
-                }
-            }
-        }
-        return out;
-    }
+// Check if the player has any legal move (used for detecting checkmate-like situations)
+inline bool hasAnyLegalMove(const GameState& state, Player player) {
+	if (player == Player::None) {
+		return false;
+	}
 
-    // Checks whether a given move is legal under the Game of Amazons rules
+	const auto& board = state.board();
+	const auto& queens = state.queenPositions(player);
 
-    inline bool isMoveLegal(const GameState& state, const Move& move) {
-        // Basic rule: cannot move if the game is over or wrong player tries to move
-        if (state.isFinished()) return false;
-        if (move.player != state.currentPlayer()) return false;
+	for (const auto& queenPos : queens) {
+		auto queenTargets = gatherReachableTiles(board, queenPos);
+		if (queenTargets.empty())
+			continue;
 
-        const Board& board = state.board();
-        // All positions must be on-board
-        if (!board.isInsideBoard(move.queenFrom) ||
-            !board.isInsideBoard(move.queenTo) ||
-            !board.isInsideBoard(move.arrow)) return false;
+		for (const auto& queenDest : queenTargets) {
+			// Simulate queen move
+			Board simulatedBoard = board;
+			simulatedBoard.setTile(queenPos.row, queenPos.col, TileContent::Empty);
+			simulatedBoard.setTile(queenDest.row, queenDest.col, tileForPlayer(player));
 
-        // The starting tile must contain the player’s queen
-        if (board.getTile(move.queenFrom) != tileForPlayer(move.player)) return false;
-        // The queenDest and arrow tiles must be empty
-        if (board.getTile(move.queenTo) != TileContent::Empty) return false;
-        if (board.getTile(move.arrow) != TileContent::Empty) return false;
+			// Check if any arrow target exists
+			auto arrowTargets = gatherReachableTiles(simulatedBoard, queenDest);
+			if (!arrowTargets.empty())
+				return true;
+		}
+	}
+	return false;
+}
 
-        // Check queen movement is valid: the destination must be reachable via straight-line sliding
-        bool reachableQueen = false;
-        for (const auto& d : DIRECTIONS) {
-            auto part = rayCast(board, move.queenFrom, d.first, d.second);
-            if (containsPosition(part, move.queenTo)) { reachableQueen = true; break; }
-        }
-        if (!reachableQueen) return false;
+// Full legality check for a move 
+inline bool isMoveLegal(const GameState& state, const Move& move) {
+	// Cannot move if game ended
+	if (state.isFinished())
+		return false;
 
-        // Check arrow legality: arrow must be reachable after moving queen
-        auto arrowTargets = generateArrowTargetsAfterMove(board, move.queenFrom, move.queenTo);
-        if (!containsPosition(arrowTargets, move.arrow)) return false;
+	// Must be correct player's turn
+	if (move.player != state.currentPlayer())
+		return false;
 
-        return true;
-    }
+	const auto& board = state.board();
 
-    // Returns true if the player has at least ONE legal move
-    inline bool hasAnyLegalMove(const GameState& state, Player p) {
-        // Generate only 1 move via moveCap to avoid heavy computation
-        return !generateMovesForPlayer(state, p, 1).empty();
-    }
+	// All positions must be inside the board
+	if (!board.isInsideBoard(move.queenFrom.row, move.queenFrom.col) ||
+		!board.isInsideBoard(move.queenTo.row, move.queenTo.col) ||
+		!board.isInsideBoard(move.arrow.row, move.arrow.col)) {
+		return false;
+	}
 
-    // Evaluates whether current player has no moves
-    // If so, game ends and the opponent wins
-    inline bool evaluateWinState(GameState& state) {
-        if (!hasAnyLegalMove(state, state.currentPlayer())) {
-            state.markFinished(opponentOf(state.currentPlayer()));
-            return true;
-        }
-        // Otherwise the game continues
-        state.setFinished(false);
-        state.setWinner(std::nullopt);
-        return false;
-    }
+	// Starting tile must contain player's queen
+	auto expectedTile = tileForPlayer(move.player);
+	if (board.getTile(move.queenFrom.row, move.queenFrom.col) != expectedTile)
+		return false;
 
-    // Applies a move to the game state
-    inline void applyMove(GameState& state, const Move& m) {
-        assert(isMoveLegal(state, m));
+	// Queen movement must be valid
+	auto queenTargets = gatherReachableTiles(board, move.queenFrom);
+	if (!containsPosition(queenTargets, move.queenTo))
+		return false;
 
-        // Move queen
-        state.updateQueenPosition(m.player, m.queenFrom, m.queenTo);
-        // Place arrow on board
-        state.addArrow(m.arrow);
-        // Record move in history
-        state.recordMove(m);
-        // Next player's turn
-        state.setCurrentPlayer(opponentOf(state.currentPlayer()));
-        // Evaluate if someone wins after move
-        evaluateWinState(state);
-    }
+	// Simulate queen move to validate arrow move
+	Board simulatedBoard = board;
+	simulatedBoard.setTile(move.queenFrom.row, move.queenFrom.col, TileContent::Empty);
+	simulatedBoard.setTile(move.queenTo.row, move.queenTo.col, expectedTile);
 
+	auto arrowTargets = gatherReachableTiles(simulatedBoard, move.queenTo);
+	if (!containsPosition(arrowTargets, move.arrow))
+		return false;
+
+	return true;
+}
+
+// Determines if the game should end after a move
+inline bool evaluateWinState(GameState& state) {
+	if (state.isFinished())
+		return true;
+
+	Player current = state.currentPlayer();
+
+	if (!hasAnyLegalMove(state, current)) {
+		// No moves - opponent wins
+		state.markFinished(opponentOf(current));
+		return true;
+	}
+	return false;
+}
+
+inline void applyMove(GameState& state, const Move& move) {
+	if (!isMoveLegal(state, move)) {
+		throw std::invalid_argument("Tried to play illegal move!");
+	}
+
+	// Move queen
+	state.updateQueenPosition(move.player, move.queenFrom, move.queenTo);
+
+	// Place arrow on board
+	state.addArrow(move.arrow);
+
+	// Record move in history
+	state.recordMove(move);
+
+	// Next player's turn
+	state.setCurrentPlayer(opponentOf(move.player));
+
+	// Evaluate if someone wins after move
+	evaluateWinState(state);
 }
 
 #endif

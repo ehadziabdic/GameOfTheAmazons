@@ -4,331 +4,295 @@
 #include "Rules.h"
 #include <vector>
 #include <queue>
-#include <unordered_set>
 #include <algorithm>
 #include <limits>
 #include <cmath>
 #include <atomic>
 #include <stdexcept>
 
-class SearchCanceled : public std::exception {
-public:
+using namespace amazons;
+
+struct SearchCanceled : public std::exception {
     const char* what() const noexcept override {
-        return "AI search was cancelled by user";
+        return "search canceled";
     }
 };
 
-class Algorithm {
-public:
-    Algorithm() = default;
-    ~Algorithm() = default;
+namespace detail {
 
-    [[nodiscard]] Move getBestMove(const GameState& state, Difficulty difficulty,
-        std::atomic_bool* cancelToken = nullptr);
+    inline int mobilityCount(const GameState& state, Player player) {
+        constexpr std::size_t kMobilitySample = 48;
+        auto moves = generateMovesForPlayer(state, player, kMobilitySample);
+        return static_cast<int>(moves.size());
+    }
 
-private:
-    [[nodiscard]] double calculateMobility(const GameState& state, Player player,
-        std::atomic_bool* cancelToken = nullptr);
+    inline std::size_t floodFillReachableTiles(const GameState& state, const Position& start) {
+        const auto& board = state.board();
+        int dim = board.dimension();
 
-    [[nodiscard]] double calculateTerritory(const GameState& state, Player player,
-        std::atomic_bool* cancelToken = nullptr);
+        if (!board.isInsideBoard(start.row, start.col)) {
+            return 0;
+        }
 
-    [[nodiscard]] int floodFillFromQueen(const GameState& state, const Position& queenPos);
+        Board workingBoard = board;
+        workingBoard.setTile(start.row, start.col, TileContent::Empty);
 
-    [[nodiscard]] double calculateSpatialInfluence(const GameState& state, Player player,
-        std::atomic_bool* cancelToken = nullptr);
+        std::vector<bool> visited(static_cast<std::size_t>(dim * dim), false);
+        auto indexOf = [dim](int row, int col) {
+            return static_cast<std::size_t>(row * dim + col);
+        };
 
-    [[nodiscard]] double evaluate(const GameState& state, Player player,
-        std::atomic_bool* cancelToken = nullptr);
+        std::queue<Position> frontier;
+        frontier.push(start);
+        visited[indexOf(start.row, start.col)] = true;
+        std::size_t count = 1;
 
-    [[nodiscard]] double minimax(const GameState& state, int depth, int maxDepth,
-        double alpha, double beta, bool maximizingPlayer,
-        Player aiPlayer, std::atomic_bool* cancelToken = nullptr);
+        while (!frontier.empty()) {
+            Position current = frontier.front();
+            frontier.pop();
 
-    [[nodiscard]] bool isTerminal(const GameState& state) const;
+            auto neighbors = gatherReachableTiles(workingBoard, current);
+            for (const auto& neighbor : neighbors) {
+                auto idx = indexOf(neighbor.row, neighbor.col);
+                if (visited[idx]) {
+                    continue;
+                }
+                visited[idx] = true;
+                frontier.push(neighbor);
+                ++count;
+            }
+        }
 
-    [[nodiscard]] static int getSearchDepth(Difficulty difficulty);
+        return count;
+    }
 
-    inline void checkCancellation(std::atomic_bool* cancelToken) const {
-        if (cancelToken && cancelToken->load()) {
+    inline int territoryScore(const GameState& state, Player player) {
+        Player opponent = opponentOf(player);
+        std::size_t playerReachable = 0;
+        std::size_t opponentReachable = 0;
+
+        for (const auto& pos : state.queenPositions(player)) {
+            playerReachable += floodFillReachableTiles(state, pos);
+        }
+
+        for (const auto& pos : state.queenPositions(opponent)) {
+            opponentReachable += floodFillReachableTiles(state, pos);
+        }
+
+        return static_cast<int>(playerReachable) - static_cast<int>(opponentReachable);
+    }
+
+    inline int spatialInfluenceScore(const GameState& state, Player player) {
+        const auto& board = state.board();
+        int dim = board.dimension();
+
+        if (dim == 0) {
+            return 0;
+        }
+
+        double center = (dim - 1) / 2.0;
+
+        auto positionalValue = [&](const Position& pos) {
+            double dist = std::abs(pos.row - center) + std::abs(pos.col - center);
+            double maxDist = 2.0 * (dim - 1);
+            double normalized = 1.0 - (dist / maxDist);
+            auto mobility = gatherReachableTiles(board, pos).size();
+            return static_cast<double>(mobility) * 0.25 + normalized * 10.0;
+        };
+
+        double score = 0.0;
+        for (const auto& pos : state.queenPositions(player)) {
+            score += positionalValue(pos);
+        }
+
+        for (const auto& pos : state.queenPositions(opponentOf(player))) {
+            score -= positionalValue(pos);
+        }
+
+        return static_cast<int>(score);
+    }
+
+    inline int evaluateTerminal(const GameState& state, Player perspective) {
+        if (!state.isFinished()) {
+            return 0;
+        }
+
+        if (state.winner() == perspective) {
+            return std::numeric_limits<int>::max() / 4;
+        }
+
+        if (state.winner() == opponentOf(perspective)) {
+            return std::numeric_limits<int>::min() / 4;
+        }
+
+        return 0;
+    }
+
+    inline bool isTerminal(const GameState& state) {
+        if (state.isFinished()) {
+            return true;
+        }
+        return !hasAnyLegalMove(state, state.currentPlayer());
+    }
+
+}
+
+inline int evaluate(const GameState& state, Player perspective) {
+    if (state.isFinished()) {
+        return detail::evaluateTerminal(state, perspective);
+    }
+
+    Player opponent = opponentOf(perspective);
+    const int mobilityWeight = 3;
+    const int territoryWeight = 2;
+    const int spatialWeight = 1;
+
+    int mobility = detail::mobilityCount(state, perspective) - detail::mobilityCount(state, opponent);
+    int territory = detail::territoryScore(state, perspective);
+    int spatial = detail::spatialInfluenceScore(state, perspective);
+
+    return mobilityWeight * mobility + territoryWeight * territory + spatialWeight * spatial;
+}
+
+inline int minimax(GameState& state, int depth, int alpha, int beta, Player maximizingPlayer,
+    Player perspective, std::size_t moveCap, const std::atomic_bool* cancel = nullptr) {
+    if (cancel && cancel->load()) {
+        throw SearchCanceled();
+    }
+
+    bool terminal = depth == 0 || detail::isTerminal(state);
+    if (terminal) {
+        GameState evalState = state;
+        evaluateWinState(evalState);
+        return detail::evaluateTerminal(evalState, perspective);
+    }
+
+    Player current = state.currentPlayer();
+    bool isMaximizing = current == maximizingPlayer;
+    auto moves = generateMovesForPlayer(state, current, moveCap);
+
+    if (moves.empty()) {
+        GameState evalState = state;
+        evaluateWinState(evalState);
+        return detail::evaluateTerminal(evalState, perspective);
+    }
+
+    if (isMaximizing) {
+        int value = std::numeric_limits<int>::min();
+        for (const auto& move : moves) {
+            if (cancel && cancel->load()) {
+                throw SearchCanceled();
+            }
+            GameState next = state.clone();
+            applyMove(next, move);
+            int child = minimax(next, depth - 1, alpha, beta, maximizingPlayer, perspective, moveCap, cancel);
+            value = std::max(value, child);
+            alpha = std::max(alpha, value);
+            if (alpha >= beta) {
+                break;
+            }
+        }
+        return value;
+    }
+
+    int value = std::numeric_limits<int>::max();
+    for (const auto& move : moves) {
+        if (cancel && cancel->load()) {
             throw SearchCanceled();
         }
+        GameState next = state.clone();
+        applyMove(next, move);
+        int child = minimax(next, depth - 1, alpha, beta, maximizingPlayer, perspective, moveCap, cancel);
+        value = std::min(value, child);
+        beta = std::min(beta, value);
+        if (alpha >= beta) {
+            break;
+        }
+    }
+    return value;
+}
+
+inline int depthForDifficulty(Difficulty difficulty) {
+    switch (difficulty) {
+    case Difficulty::Easy:
+        return 1;
+    case Difficulty::Medium:
+        return 2;
+    case Difficulty::Hard:
+    default:
+        return 3;
+    }
+}
+
+inline std::size_t moveCapForDifficulty(Difficulty difficulty) {
+    switch (difficulty) {
+    case Difficulty::Easy:
+        return 6;
+    case Difficulty::Medium:
+        return 12;
+    case Difficulty::Hard:
+    default:
+        return 14;
+    }
+}
+
+inline Move getBestMove(const GameState& state, Difficulty difficulty, const std::atomic_bool* cancel = nullptr) {
+    GameState rootState = state;
+    std::size_t moveCap = moveCapForDifficulty(difficulty);
+    auto moves = generateMovesForPlayer(rootState, rootState.currentPlayer(), moveCap);
+
+    if (moves.empty()) {
+        return {};
     }
 
-    static constexpr double MOBILITY_WEIGHT = 1.0;
-    static constexpr double TERRITORY_WEIGHT = 2.0;
-    static constexpr double SPATIAL_WEIGHT = 0.5;
+    int searchDepth = std::max(1, depthForDifficulty(difficulty));
+    Player maximizingPlayer = rootState.currentPlayer();
+    Player perspective = maximizingPlayer;
 
-    static constexpr double CENTER_BONUS = 5.0;
-    static constexpr double REACHABLE_BONUS_FACTOR = 0.1;
-    static constexpr double EDGE_TRAPPED_PENALTY = 3.0;
+    struct ScoredMove {
+        Move move;
+        int heuristic;
+    };
 
-    static constexpr double WIN_SCORE = 100000.0;
-    static constexpr double LOSE_SCORE = -100000.0;
+    std::vector<ScoredMove> scored;
+    scored.reserve(moves.size());
 
-    static constexpr int DIR_ROW[8] = { -1, -1, -1,  0, 0, 1, 1, 1 };
-    static constexpr int DIR_COL[8] = { -1,  0,  1, -1, 1,-1, 0, 1 };
-};
-
-inline Move Algorithm::getBestMove(const GameState& state, Difficulty difficulty,
-    std::atomic_bool* cancelToken) {
-    int maxDepth = getSearchDepth(difficulty);
-    Player aiPlayer = state.currentPlayer();
-
-    std::vector<Move> legalMoves = amazons::generateMovesForPlayer(state, aiPlayer);
-    if (legalMoves.empty()) {
-        throw std::runtime_error("getBestMove called but no legal moves available");
+    for (const auto& move : moves) {
+        GameState next = rootState.clone();
+        applyMove(next, move);
+        int heuristic = evaluate(next, perspective);
+        scored.push_back({move, heuristic});
     }
 
-    Move bestMove = legalMoves[0];
-    double bestScore = LOSE_SCORE;
+    std::sort(scored.begin(), scored.end(), [](const ScoredMove& a, const ScoredMove& b) {
+        return a.heuristic > b.heuristic;
+    });
 
-    for (const auto& move : legalMoves) {
-        checkCancellation(cancelToken);
+    Move bestMove = scored.front().move;
+    int bestScore = std::numeric_limits<int>::min();
 
-        GameState nextState = state.clone();
-        amazons::applyMove(nextState, move);
+    int primaryDepth = std::max(0, searchDepth - 1);
+    int shallowDepth = std::max(0, primaryDepth - 1);
+    std::size_t deepSlots = (difficulty == Difficulty::Hard && scored.size() > 6) ? 6 : scored.size();
 
-        double score = minimax(nextState, 1, maxDepth,
-            LOSE_SCORE, WIN_SCORE,
-            false, aiPlayer, cancelToken);
+    for (std::size_t idx = 0; idx < scored.size(); ++idx) {
+        const auto& entry = scored[idx];
+        GameState next = rootState.clone();
+        applyMove(next, entry.move);
+
+        int depthForMove = primaryDepth;
+        if (difficulty == Difficulty::Hard && idx >= deepSlots) {
+            depthForMove = shallowDepth;
+        }
+
+        int score = minimax(next, depthForMove, std::numeric_limits<int>::min(),
+            std::numeric_limits<int>::max(), maximizingPlayer, perspective, moveCap, cancel);
 
         if (score > bestScore) {
             bestScore = score;
-            bestMove = move;
+            bestMove = entry.move;
         }
     }
 
     return bestMove;
-}
-
-inline double Algorithm::calculateMobility(const GameState& state, Player player,
-    std::atomic_bool* cancelToken) {
-    checkCancellation(cancelToken);
-
-    GameState temp = state.clone();
-
-    temp.setCurrentPlayer(player);
-    int playerMoves = static_cast<int>(amazons::generateMovesForPlayer(temp, player).size());
-
-    temp.setCurrentPlayer(opponentOf(player));
-    int opponentMoves = static_cast<int>(amazons::generateMovesForPlayer(temp, opponentOf(player)).size());
-
-    return static_cast<double>(playerMoves - opponentMoves);
-}
-
-inline int Algorithm::floodFillFromQueen(const GameState& state, const Position& queenPos) {
-    const Board& board = state.board();
-    const int dim = board.dimension();
-
-    std::unordered_set<int> visited;
-    std::queue<Position> q;
-
-    visited.insert(queenPos.row * dim + queenPos.col);
-
-    for (int d = 0; d < 8; ++d) {
-        int r = queenPos.row + DIR_ROW[d];
-        int c = queenPos.col + DIR_COL[d];
-
-        while (board.isInsideBoard(r, c)) {
-            TileContent tile = board.getTile(r, c);
-
-            if (tile == TileContent::Arrow ||
-                tile == TileContent::WhiteQueen ||
-                tile == TileContent::BlackQueen) {
-                break;
-            }
-
-            int idx = r * dim + c;
-            if (visited.find(idx) == visited.end()) {
-                visited.insert(idx);
-                q.push({ r, c });
-            }
-
-            r += DIR_ROW[d];
-            c += DIR_COL[d];
-        }
-    }
-
-    int reachableCount = 0;
-
-    while (!q.empty()) {
-        Position cur = q.front();
-        q.pop();
-
-        ++reachableCount;
-
-        for (int d = 0; d < 8; ++d) {
-            int r = cur.row + DIR_ROW[d];
-            int c = cur.col + DIR_COL[d];
-
-            while (board.isInsideBoard(r, c)) {
-                TileContent tile = board.getTile(r, c);
-
-                if (tile == TileContent::Arrow ||
-                    tile == TileContent::WhiteQueen ||
-                    tile == TileContent::BlackQueen) {
-                    break;
-                }
-
-                int idx = r * dim + c;
-                if (visited.find(idx) == visited.end()) {
-                    visited.insert(idx);
-                    q.push({ r, c });
-                }
-
-                r += DIR_ROW[d];
-                c += DIR_COL[d];
-            }
-        }
-    }
-
-    return reachableCount;
-}
-
-inline double Algorithm::calculateTerritory(const GameState& state, Player player,
-    std::atomic_bool* cancelToken) {
-    checkCancellation(cancelToken);
-
-    int playerTerritory = 0;
-    int opponentTerritory = 0;
-
-    for (const auto& pos : state.queenPositions(player)) {
-        playerTerritory += floodFillFromQueen(state, pos);
-    }
-    for (const auto& pos : state.queenPositions(opponentOf(player))) {
-        opponentTerritory += floodFillFromQueen(state, pos);
-    }
-
-    return static_cast<double>(playerTerritory - opponentTerritory);
-}
-
-inline double Algorithm::calculateSpatialInfluence(const GameState& state, Player player,
-    std::atomic_bool* cancelToken) {
-    checkCancellation(cancelToken);
-
-    const Board& board = state.board();
-    const int dim = board.dimension();
-
-    double centerRow = (dim - 1) / 2.0;
-    double centerCol = (dim - 1) / 2.0;
-
-    auto evalSide = [&](Player p) -> double {
-        double sum = 0.0;
-        const auto& queens = state.queenPositions(p);
-
-        for (const auto& pos : queens) {
-            double dist = std::abs(pos.row - centerRow) +
-                std::abs(pos.col - centerCol);
-            if (dist <= 2.0) {
-                sum += CENTER_BONUS;
-            }
-
-            int reachable = floodFillFromQueen(state, pos);
-            sum += reachable * REACHABLE_BONUS_FACTOR;
-
-            bool onEdge = (pos.row == 0 || pos.row == dim - 1 ||
-                pos.col == 0 || pos.col == dim - 1);
-            if (onEdge && reachable < 5) {
-                sum -= EDGE_TRAPPED_PENALTY;
-            }
-        }
-
-        return sum;
-        };
-
-    double playerInf = evalSide(player);
-    double opponentInf = evalSide(opponentOf(player));
-
-    return playerInf - opponentInf;
-}
-
-inline double Algorithm::evaluate(const GameState& state, Player player,
-    std::atomic_bool* cancelToken) {
-    checkCancellation(cancelToken);
-
-    if (!amazons::hasAnyLegalMove(state, player)) {
-        return LOSE_SCORE;
-    }
-    if (!amazons::hasAnyLegalMove(state, opponentOf(player))) {
-        return WIN_SCORE;
-    }
-
-    double mobility = calculateMobility(state, player, cancelToken);
-    double territory = calculateTerritory(state, player, cancelToken);
-    double spatial = calculateSpatialInfluence(state, player, cancelToken);
-
-    return MOBILITY_WEIGHT * mobility +
-        TERRITORY_WEIGHT * territory +
-        SPATIAL_WEIGHT * spatial;
-}
-
-inline bool Algorithm::isTerminal(const GameState& state) const {
-    return !amazons::hasAnyLegalMove(state, state.currentPlayer());
-}
-
-inline double Algorithm::minimax(const GameState& state, int depth, int maxDepth,
-    double alpha, double beta, bool maximizingPlayer,
-    Player aiPlayer, std::atomic_bool* cancelToken) {
-    checkCancellation(cancelToken);
-
-    if (depth >= maxDepth || isTerminal(state)) {
-        return evaluate(state, aiPlayer, cancelToken);
-    }
-
-    std::vector<Move> legalMoves = amazons::generateMovesForPlayer(state, state.currentPlayer());
-
-    if (maximizingPlayer) {
-        double best = LOSE_SCORE;
-
-        for (const auto& move : legalMoves) {
-            checkCancellation(cancelToken);
-
-            GameState nextState = state.clone();
-            amazons::applyMove(nextState, move);
-
-            double val = minimax(nextState, depth + 1, maxDepth,
-                alpha, beta, false, aiPlayer, cancelToken);
-
-            best = std::max(best, val);
-            alpha = std::max(alpha, val);
-
-            if (alpha >= beta) {
-                break;
-            }
-        }
-
-        return best;
-    }
-    else {
-        double best = WIN_SCORE;
-
-        for (const auto& move : legalMoves) {
-            checkCancellation(cancelToken);
-
-            GameState nextState = state.clone();
-            amazons::applyMove(nextState, move);
-
-            double val = minimax(nextState, depth + 1, maxDepth,
-                alpha, beta, true, aiPlayer, cancelToken);
-
-            best = std::min(best, val);
-            beta = std::min(beta, val);
-
-            if (alpha >= beta) {
-                break;
-            }
-        }
-
-        return best;
-    }
-}
-
-inline int Algorithm::getSearchDepth(Difficulty difficulty) {
-    switch (difficulty) {
-    case Difficulty::Easy:   return 2;
-    case Difficulty::Medium: return 4;
-    case Difficulty::Hard:   return 6;
-    default:                 return 4;
-    }
 }

@@ -17,6 +17,11 @@
     <Res id="language" tr="Jezik"/>
     <Res id="langEnglish" tr="Engleski"/>
     <Res id="langBosnian" tr="Bosanski"/>
+    <Res id="langGerman" tr="Njemački"/>
+    <Res id="langSpanish" tr="Španski"/>
+    <Res id="langFrench" tr="Francuski"/>
+    <Res id="langJapanese" tr="Japanski"/>
+
 
 	<!-- Difficulty -->
     <Res id="Easy" tr="Lagano"/>
@@ -28,10 +33,15 @@
 
 	<!-- Themes -->
 	<Res id="woodenTheme" tr="Drveni stil"/>
+	<Res id="iceTheme" tr="Ledeni stil"/>
+	<Res id="stoneTheme" tr="Kameni stil"/>
+	<Res id="diamondTheme" tr="Dijamantni stil"/>
+	<Res id="tournamentTheme" tr="Turnirski stil"/>
+	<Res id="bubblegumTheme" tr="Bubblegum stil"/>
 	<Res id="blackWhiteTheme" tr="Crno-bjeli stil"/>
-	<Res id="greenTheme" tr="Travnati stil"/>
-    <Res id="blueTheme" tr="Ledeni stil"/>
-    <Res id="roseTheme" tr="Ljubavni stil"/>
+	<Res id="customTheme" tr="Prilagođeni stil"/>
+	<Res id="lightTileColor" tr="Boja svijetlog polja"/>
+	<Res id="darkTileColor" tr="Boja tamnog polja"/>
 
 	<!-- Status messages -->
     <Res id="statusSelectQueen" tr="STATUS: Odaberite kraljicu za pomjeranje"/>
@@ -41,10 +51,18 @@
     <Res id="statusGameFinished" tr="STATUS: Igra završena"/>
     <Res id="aiThinking" tr="AI razmišlja..."/>
 
+	<!-- Player Type -->
+    <Res id="whitePlayer" tr="Igrač 1:"/>
+    <Res id="blackPlayer" tr="Igrač 2:"/>
+    <Res id="human" tr="Igrač"/>
+    <Res id="ai" tr="AI"/>
+
 	<!-- Game Over messages -->
     <Res id="gameOver" tr="Igra je gotova"/>
     <Res id="msgYouWin" tr="Osvojili ste tablu!"/>
     <Res id="msgYouLose" tr="Nema preostalih poteza. Izgubili ste."/>
+    <Res id="msgWhiteWins" tr="Bijeli pobjeđuje!"/>
+    <Res id="msgBlackWins" tr="Crni pobjeđuje!"/>
 
 	<!-- Restart -->
     <Res id="RestartRequired" tr="Ponovo pokrenite aplikaciju"/>

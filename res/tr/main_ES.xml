@@ -1,0 +1,74 @@
+<?xml version='1.0'?>
+<DevRes>
+    <Translations>
+        <!-- Title bar -->
+        <Res id="appTitle" tr="El Juego de las Amazonas"/>
+        <Res id="settings" tr="Ajustes"/>
+        <Res id="settingsTT" tr="Ajustar apariencia, dificultad e idioma. Cambiar el idioma requiere reiniciar la app."/>
+        <Res id="newGame" tr="Nueva partida"/>
+        <Res id="newGameTT" tr="Iniciar nueva partida."/>
+        <Res id="undo" tr="Deshacer"/>
+        <Res id="undoTT" tr="Deshacer el último movimiento de la reina si no se ha lanzado la flecha."/>
+        <Res id="cancel" tr="Detener IA"/>
+        <Res id="cancelTT" tr="Detener el proceso de la IA para poder cerrar el juego de forma segura."/>
+
+        <!-- Settings -->
+        <Res id="boardSize" tr="Tamaño del tablero"/>
+        <Res id="boardStyle" tr="Estilo del tablero"/>
+        <Res id="difficulty" tr="Dificultad"/>
+        <Res id="language" tr="Idioma"/>
+        <Res id="langEnglish" tr="Inglés"/>
+        <Res id="langBosnian" tr="Bosnio"/>
+        <Res id="langGerman" tr="Alemán"/>
+        <Res id="langSpanish" tr="Español"/>
+        <Res id="langFrench" tr="Francés"/>
+        <Res id="langJapanese" tr="Japonés"/> 
+
+        <!-- Difficulty -->
+        <Res id="Easy" tr="Fácil"/>
+        <Res id="EasyTT" tr="Cambiar a modo Fácil"/>
+        <Res id="Medium" tr="Medio"/>
+        <Res id="MediumTT" tr="Cambiar a modo Medio"/>
+        <Res id="Hard" tr="Difícil"/>
+        <Res id="HardTT" tr="Cambiar a modo Difícil"/>
+
+        <!-- Themes -->
+        <Res id="woodenTheme" tr="Tema Madera"/>
+        <Res id="iceTheme" tr="Tema Hielo"/>
+        <Res id="stoneTheme" tr="Tema de piedra"/>
+        <Res id="diamondTheme" tr="Tema de diamante"/>
+        <Res id="tournamentTheme" tr="Tema de torneo"/>
+        <Res id="bubblegumTheme" tr="Tema de chicle"/>
+        <Res id="blackWhiteTheme" tr="Tema Blanco y Negro"/>
+        <Res id="customTheme" tr="Tema personalizado"/>
+        <Res id="lightTileColor" tr="Color casilla clara"/>
+        <Res id="darkTileColor" tr="Color casilla oscura"/>
+
+        <!-- Status messages -->
+        <Res id="statusSelectQueen" tr="ESTADO: Selecciona una reina para mover"/>
+        <Res id="statusSelectDestination" tr="ESTADO: Elige el destino de la reina"/>
+        <Res id="statusSelectArrow" tr="ESTADO: Selecciona objetivo de flecha. Para cancelar, pulsa Deshacer"/>
+        <Res id="statusAiThinking" tr="ESTADO: La IA está pensando..."/>
+        <Res id="statusGameFinished" tr="ESTADO: Juego terminado"/>
+        <Res id="aiThinking" tr="La IA está pensando..."/>
+
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="Jugador 1:"/>
+        <Res id="blackPlayer" tr="Jugador 2:"/>
+        <Res id="human" tr="Jugador"/>
+        <Res id="ai" tr="IA"/>
+
+        <!-- Game Over messages -->
+        <Res id="gameOver" tr="Fin del juego"/>
+        <Res id="msgYouWin" tr="¡Has conquistado el tablero!"/>
+        <Res id="msgYouLose" tr="Sin movimientos. Has perdido."/>
+        <Res id="msgWhiteWins" tr="¡Ganan las blancas!"/>
+        <Res id="msgBlackWins" tr="¡Ganan las negras!"/>
+
+        <!-- Restart -->
+        <Res id="RestartRequired" tr="Reiniciar la aplicación"/>
+        <Res id="RestartRequiredInfo" tr="Algunos ajustes cambiados requieren reiniciar la aplicación para surtir efecto"/>
+        <Res id="Restart" tr="Reiniciar"/>
+        <Res id="DoNoRestart" tr="No reiniciar"/>
+    </Translations>
+</DevRes>

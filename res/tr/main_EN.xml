@@ -19,6 +19,10 @@
         <Res id="language" tr="Language"/>
         <Res id="langEnglish" tr="English"/>
         <Res id="langBosnian" tr="Bosnian"/>
+        <Res id="langGerman" tr="German"/>
+        <Res id="langSpanish" tr="Spanish"/>
+        <Res id="langFrench" tr="French"/>
+        <Res id="langJapanese" tr="Japanese"/>  
 
         <!-- Difficulty -->
         <Res id="Easy" tr="Easy"/>
@@ -30,23 +34,36 @@
 
         <!-- Themes -->
         <Res id="woodenTheme" tr="Wooden Theme"/>
+        <Res id="iceTheme" tr="Ice Theme"/>
+        <Res id="stoneTheme" tr="Stone Theme"/>
+        <Res id="diamondTheme" tr="Diamond Theme"/>
+        <Res id="tournamentTheme" tr="Tournament Theme"/>
+        <Res id="bubblegumTheme" tr="Bubblegum Theme"/>
         <Res id="blackWhiteTheme" tr="Black 'n' White Theme"/>
-        <Res id="greenTheme" tr="Grass Theme"/>
-        <Res id="blueTheme" tr="Ice Theme"/>
-        <Res id="roseTheme" tr="Love Theme"/>
+        <Res id="customTheme" tr="Custom Theme"/>
+        <Res id="lightTileColor" tr="Light Tile Color"/>
+        <Res id="darkTileColor" tr="Dark Tile Color"/>
 
         <!-- Status messages -->
         <Res id="statusSelectQueen" tr="STATUS: Select a queen to move"/>
         <Res id="statusSelectDestination" tr="STATUS: Choose the queen's destination"/>
-        <Res id="statusSelectArrow" tr="STATUS: Select an arrow target, If you want to cancle click Undo buttoon"/>
+        <Res id="statusSelectArrow" tr="STATUS: Select an arrow target, If you want to cancel click Undo buttoon"/>
         <Res id="statusAiThinking" tr="STATUS: AI is thinking..."/>
         <Res id="statusGameFinished" tr="STATUS: Game finished"/>
         <Res id="aiThinking" tr="AI is thinking..."/>
+
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="Player 1:"/>
+        <Res id="blackPlayer" tr="Player 2:"/>
+        <Res id="human" tr="Player"/>
+        <Res id="ai" tr="AI"/>
 
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Game Over"/>
         <Res id="msgYouWin" tr="You conquered the board!"/>
         <Res id="msgYouLose" tr="No moves left. You lost."/>
+        <Res id="msgWhiteWins" tr="White wins!"/>
+        <Res id="msgBlackWins" tr="Black wins!"/>
 
         <!-- Restart -->
         <Res id="RestartRequired" tr="Restart the application"/>

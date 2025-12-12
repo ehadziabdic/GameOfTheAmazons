@@ -1,0 +1,74 @@
+<?xml version='1.0'?>
+<DevRes>
+    <Translations>
+        <!-- Title bar -->
+        <Res id="appTitle" tr="アマゾンゲーム"/>
+        <Res id="settings" tr="設定"/>
+        <Res id="settingsTT" tr="外観、難易度、言語を調整します。言語の変更にはアプリの再起動が必要です。"/>
+        <Res id="newGame" tr="新規ゲーム"/>
+        <Res id="newGameTT" tr="新しいゲームを開始します。"/>
+        <Res id="undo" tr="元に戻す"/>
+        <Res id="undoTT" tr="矢を放っていない場合、最後のクイーンの移動を元に戻します。"/>
+        <Res id="cancel" tr="AIを停止"/>
+        <Res id="cancelTT" tr="AIの思考プロセスを停止し、ゲームを安全に終了できるようにします。"/>
+
+        <!-- Settings -->
+        <Res id="boardSize" tr="盤のサイズ"/>
+        <Res id="boardStyle" tr="盤のスタイル"/>
+        <Res id="difficulty" tr="難易度"/>
+        <Res id="language" tr="言語"/>
+        <Res id="langEnglish" tr="英語"/>
+        <Res id="langBosnian" tr="ボスニア語"/>
+        <Res id="langGerman" tr="ドイツ語"/>
+        <Res id="langSpanish" tr="スペイン語"/>
+        <Res id="langFrench" tr="フランス語"/>
+        <Res id="langJapanese" tr="日本語"/>
+
+        <!-- Difficulty -->
+        <Res id="Easy" tr="簡単"/>
+        <Res id="EasyTT" tr="「簡単」モードに切り替え"/>
+        <Res id="Medium" tr="普通"/>
+        <Res id="MediumTT" tr="「普通」モードに切り替え"/>
+        <Res id="Hard" tr="難しい"/>
+        <Res id="HardTT" tr="「難しい」モードに切り替え"/>
+
+        <!-- Themes -->
+        <Res id="woodenTheme" tr="木目調テーマ"/>
+        <Res id="iceTheme" tr="氷テーマ"/>
+        <Res id="stoneTheme" tr="石のテーマ"/>
+        <Res id="diamondTheme" tr="ダイヤのテーマ"/>
+        <Res id="tournamentTheme" tr="トーナメント用テーマ"/>
+        <Res id="bubblegumTheme" tr="ガムのテーマ"/>
+        <Res id="blackWhiteTheme" tr="白黒テーマ"/>
+        <Res id="customTheme" tr="カスタムテーマ"/>
+        <Res id="lightTileColor" tr="明るいマスの色"/>
+        <Res id="darkTileColor" tr="暗いマスの色"/>
+
+        <!-- Status messages -->
+        <Res id="statusSelectQueen" tr="ステータス：移動させるクイーンを選択してください"/>
+        <Res id="statusSelectDestination" tr="ステータス：クイーンの移動先を選択してください"/>
+        <Res id="statusSelectArrow" tr="ステータス：矢の標的を選択してください。キャンセルするには「元に戻す」を押してください"/>
+        <Res id="statusAiThinking" tr="ステータス：AIが思考中..."/>
+        <Res id="statusGameFinished" tr="ステータス：ゲーム終了"/>
+        <Res id="aiThinking" tr="AIが思考中..."/>
+
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="プレイヤー一(1):"/>
+        <Res id="blackPlayer" tr="プレイヤー二(2):"/>
+        <Res id="human" tr="プレイヤー"/>
+        <Res id="ai" tr="AI"/>
+
+        <!-- Game Over messages -->
+        <Res id="gameOver" tr="ゲームオーバー"/>
+        <Res id="msgYouWin" tr="盤面を制圧しました！"/>
+        <Res id="msgYouLose" tr="動ける場所がありません。あなたの負けです。"/>
+        <Res id="msgWhiteWins" tr="白の勝ち！"/>
+        <Res id="msgBlackWins" tr="黒の勝ち！"/>
+
+        <!-- Restart -->
+        <Res id="RestartRequired" tr="アプリの再起動"/>
+        <Res id="RestartRequiredInfo" tr="変更した設定を有効にするには、アプリを再起動する必要があります"/>
+        <Res id="Restart" tr="再起動"/>
+        <Res id="DoNoRestart" tr="再起動しない"/>
+    </Translations>
+</DevRes>

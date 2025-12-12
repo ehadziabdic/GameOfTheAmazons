@@ -42,4 +42,6 @@ public:
     void syncSelections(BoardDimension board, Difficulty difficulty, BoardStyle style) {
         _settingsView.syncSelections(board, difficulty, style);
     }
+    
+    SettingsPopup& getSettingsView() { return _settingsView; }
 };

@@ -1,0 +1,74 @@
+<?xml version='1.0'?>
+<DevRes>
+    <Translations>
+        <!-- Title bar -->
+        <Res id="appTitle" tr="Spiel der Amazonen"/>
+        <Res id="settings" tr="Einstellungen"/>
+        <Res id="settingsTT" tr="Aussehen, Schwierigkeit und Sprache anpassen. Sprachänderung erfordert Neustart."/>
+        <Res id="newGame" tr="Neues Spiel"/>
+        <Res id="newGameTT" tr="Neues Spiel starten."/>
+        <Res id="undo" tr="Rückgängig"/>
+        <Res id="undoTT" tr="Letzten Damenzug zurücknehmen, falls Pfeil noch nicht geschossen wurde."/>
+        <Res id="cancel" tr="KI stoppen"/>
+        <Res id="cancelTT" tr="KI-Denkprozess stoppen, damit das Spiel sicher beendet werden kann."/>
+
+        <!-- Settings -->
+        <Res id="boardSize" tr="Brettgröße"/>
+        <Res id="boardStyle" tr="Brettstil"/>
+        <Res id="difficulty" tr="Schwierigkeit"/>
+        <Res id="language" tr="Sprache"/>
+        <Res id="langEnglish" tr="Englisch"/>
+        <Res id="langBosnian" tr="Bosnisch"/>
+        <Res id="langGerman" tr="Deutsch"/>
+        <Res id="langSpanish" tr="Spanisch"/>
+        <Res id="langFrench" tr="Französisch"/>
+        <Res id="langJapanese" tr="Japanisch"/>
+
+        <!-- Difficulty -->
+        <Res id="Easy" tr="Leicht"/>
+        <Res id="EasyTT" tr="In den leichten Modus wechseln"/>
+        <Res id="Medium" tr="Mittel"/>
+        <Res id="MediumTT" tr="In den mittleren Modus wechseln"/>
+        <Res id="Hard" tr="Schwer"/>
+        <Res id="HardTT" tr="In den schweren Modus wechseln"/>
+
+        <!-- Themes -->
+        <Res id="woodenTheme" tr="Holz-Design"/>
+        <Res id="iceTheme" tr="Eis-Design"/>
+        <Res id="stoneTheme" tr="Stein-Design"/>
+        <Res id="diamondTheme" tr="Diamant-Design"/>
+        <Res id="tournamentTheme" tr="Turnier-Design"/>
+        <Res id="bubblegumTheme" tr="Kaugummi-Design"/>
+        <Res id="blackWhiteTheme" tr="Schwarz-Weiß-Design"/>
+	    <Res id="customTheme" tr="Benutzerdefiniertes Design"/>
+	    <Res id="lightTileColor" tr="Farbe helles Feld"/>
+	    <Res id="darkTileColor" tr="Farbe dunkles Feld"/>
+
+        <!-- Status messages -->
+        <Res id="statusSelectQueen" tr="STATUS: Wähle eine Dame zum Bewegen"/>
+        <Res id="statusSelectDestination" tr="STATUS: Wähle das Ziel der Dame"/>
+        <Res id="statusSelectArrow" tr="STATUS: Wähle ein Pfeilziel. Zum Abbrechen 'Rückgängig' klicken"/>
+        <Res id="statusAiThinking" tr="STATUS: KI denkt nach..."/>
+        <Res id="statusGameFinished" tr="STATUS: Spiel beendet"/>
+        <Res id="aiThinking" tr="KI denkt nach..."/>
+
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="Spieler 1:"/>
+        <Res id="blackPlayer" tr="Spieler 2:"/>
+        <Res id="human" tr="Spieler"/>
+        <Res id="ai" tr="KI"/>
+
+        <!-- Game Over messages -->
+        <Res id="gameOver" tr="Spiel vorbei"/>
+        <Res id="msgYouWin" tr="Du hast das Brett erobert!"/>
+        <Res id="msgYouLose" tr="Keine Züge mehr. Du hast verloren."/>
+        <Res id="msgWhiteWins" tr="Weiß gewinnt!"/>
+        <Res id="msgBlackWins" tr="Schwarz gewinnt!"/>
+
+        <!-- Restart -->
+        <Res id="RestartRequired" tr="Anwendung neu starten"/>
+        <Res id="RestartRequiredInfo" tr="Einige geänderte Einstellungen erfordern einen Neustart der Anwendung"/>
+        <Res id="Restart" tr="Neu starten"/>
+        <Res id="DoNoRestart" tr="Nicht neu starten"/>
+    </Translations>
+</DevRes>

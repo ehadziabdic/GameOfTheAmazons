@@ -27,9 +27,17 @@ enum class Difficulty : std::uint8_t {
 enum class BoardStyle : std::uint8_t {
     Wooden = 0,
     BlackWhite,
-    GreenTheme,
-    BlueTheme,
-    RoseTheme
+    IceTheme,
+    StoneTheme,
+    DiamondTheme,
+    TournamentTheme,
+    BubblegumTheme,
+    CustomTheme
+};
+
+enum class PlayerType : std::uint8_t {
+    Human = 0,
+    AI
 };
 
 struct Move {

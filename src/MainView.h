@@ -35,19 +35,24 @@ public:
 
 	// Allow the window to receive toolbar state updates (enable/disable items)
 	void setToolbarStateHandler(std::function<void(bool,bool)> handler);
+	// Allow the window to update status bar text
+	void setStatusBarHandler(std::function<void(const td::String&)> handler);
 
 	void focusBoard();
 
 private:
 	AmazonsBoardCanvas _boardCanvas;
 	gui::GridLayout _layout;
+	gui::Label _lblWhite;
+	gui::ComboBox _cmbWhitePlayerType;
+	gui::Label _lblBlack;
+	gui::ComboBox _cmbBlackPlayerType;
 	gui::Image _imgNewGame;
 	gui::Image _imgUndo;
 	gui::Image _imgSettings;
 	gui::Button _btnNewGame;
 	gui::Button _btnUndo;
 	gui::Button _btnSettings;
-	gui::Label _lblStatus;
 	gui::Sound _soundMove;
 	gui::Sound _soundVictory;
 	gui::Sound _soundLoss;
@@ -59,14 +64,15 @@ private:
 	BoardStyle _selectedBoardStyle = BoardStyle::Wooden;
 
 	GameState _state;
-	Player _humanPlayer = Player::White;
-	Player _aiPlayer = Player::Black;
+	PlayerType _whitePlayerType = PlayerType::Human;
+	PlayerType _blackPlayerType = PlayerType::AI;
 	bool _gameOverDialogShown = false;
 
 	std::thread _aiThread;
 	bool _aiThinking = false;
 	std::atomic_bool _cancelAi{false};
 	std::function<void(bool,bool)> _toolbarStateHandler;
+	std::function<void(const td::String&)> _statusBarHandler;
 
 	void buildLayout();
 	void populateControls();
@@ -84,17 +90,17 @@ private:
 	Difficulty selectedDifficulty() const;
 	void finalizeAiThread();
 	bool guardAgainstAiBusy() const;
+	bool isCurrentPlayerAI() const;
 };
 
 inline MainView::MainView()
-: _layout(2, 4)
+: _layout(3, 1)
 	, _imgNewGame(":reset")
 	, _imgUndo(":undo")
 	, _imgSettings(":settings")
 	, _btnNewGame(&_imgNewGame, tr("newGame"))
 	, _btnUndo(&_imgUndo, tr("undo"))
 	, _btnSettings(&_imgSettings, tr("settings"))
-	, _lblStatus(tr("statusSelectQueen"))
 	, _soundMove(":move")
 	, _soundVictory(":victory")
 	, _soundLoss(":loss")
@@ -124,12 +130,26 @@ inline void MainView::focusBoard() {
 
 inline void MainView::buildLayout() {
 	gui::GridComposer composer(_layout);
-	// Status row only; toolbar lives in the window header now.
-	composer.appendRow(_lblStatus);
-	composer.appendRow(_boardCanvas, 4);
+	// Row 1: Black player combo
+	composer.appendRow(_cmbBlackPlayerType);
+	// Row 2: Board
+	composer.appendRow(_boardCanvas);
+	// Row 3: White player combo
+	composer.appendRow(_cmbWhitePlayerType);
 }
 
 inline void MainView::populateControls() {
+	// Player type combos (labels not needed - will use combo title/tooltip)
+	_cmbWhitePlayerType.setToolTip(tr("whitePlayer"));
+	_cmbWhitePlayerType.addItem(tr("human"));
+	_cmbWhitePlayerType.addItem(tr("ai"));
+	_cmbWhitePlayerType.selectIndex(0); // Default to Human
+	
+	_cmbBlackPlayerType.setToolTip(tr("blackPlayer"));
+	_cmbBlackPlayerType.addItem(tr("human"));
+	_cmbBlackPlayerType.addItem(tr("ai"));
+	_cmbBlackPlayerType.selectIndex(1); // Default to AI
+	
 	_btnNewGame.setToolTip(tr("newGame"));
 	_btnNewGame.setFlat();
 	_btnNewGame.setToMinSize();
@@ -142,6 +162,37 @@ inline void MainView::populateControls() {
 }
 
 inline void MainView::wireCallbacks() {
+	// Player type combo boxes
+	_cmbWhitePlayerType.onChangedSelection([this]() {
+		int selectedIndex = _cmbWhitePlayerType.getSelectedIndex();
+		_whitePlayerType = static_cast<PlayerType>(selectedIndex);
+		// If it's White's turn, update interaction and possibly trigger AI
+		if (_state.currentPlayer() == Player::White && !_state.isFinished()) {
+			if (_whitePlayerType == PlayerType::AI) {
+				_boardCanvas.setInteractionEnabled(false);
+				requestAiMove();
+			} else {
+				_boardCanvas.setInteractionEnabled(true);
+				updateStatusForPhase(_boardCanvas.currentPhase());
+			}
+		}
+	});
+	
+	_cmbBlackPlayerType.onChangedSelection([this]() {
+		int selectedIndex = _cmbBlackPlayerType.getSelectedIndex();
+		_blackPlayerType = static_cast<PlayerType>(selectedIndex);
+		// If it's Black's turn, update interaction and possibly trigger AI
+		if (_state.currentPlayer() == Player::Black && !_state.isFinished()) {
+			if (_blackPlayerType == PlayerType::AI) {
+				_boardCanvas.setInteractionEnabled(false);
+				requestAiMove();
+			} else {
+				_boardCanvas.setInteractionEnabled(true);
+				updateStatusForPhase(_boardCanvas.currentPhase());
+			}
+		}
+	});
+	
 	_btnNewGame.onClick([this]() {
 		if (guardAgainstAiBusy()) {
 			return;
@@ -181,7 +232,7 @@ inline void MainView::startNewGame() {
 	updateStatusForPhase(_boardCanvas.currentPhase());
 	updateControlsState();
 
-	if (_state.currentPlayer() == _aiPlayer) {
+	if (isCurrentPlayerAI()) {
 		_boardCanvas.setInteractionEnabled(false);
 		requestAiMove();
 	}
@@ -216,12 +267,18 @@ inline void MainView::openSettingsDialog()
 		startNewGame();
 		_boardCanvas.setBoardStyle(_selectedBoardStyle);
 	});
-	dlg->setBoardStyleChangedHandler([this](BoardStyle style) {
+	dlg->setBoardStyleChangedHandler([this, dlg](BoardStyle style) {
 		if (guardAgainstAiBusy()) {
 			return;
 		}
 		_selectedBoardStyle = style;
 		_boardCanvas.setBoardStyle(_selectedBoardStyle);
+		// If custom theme, also update the custom colors
+		if (style == BoardStyle::CustomTheme) {
+			td::ColorID lightColor = dlg->getSettingsView().getLightTileColor();
+			td::ColorID darkColor = dlg->getSettingsView().getDarkTileColor();
+			_boardCanvas.setCustomColors(lightColor, darkColor);
+		}
 		updateControlsState();
 	});
 	dlg->openNonModal();
@@ -279,13 +336,13 @@ inline void MainView::handleHumanMove(const Move& move) {
 		return;
 	}
 
-	if (_state.currentPlayer() == _aiPlayer) {
+	if (isCurrentPlayerAI()) {
 		// If board is animating (arrow in flight / impact pending), defer AI until animations complete
 		if (_boardCanvas.isAnimating()) {
 			_boardCanvas.setAnimationFinishedHandler([this]() {
 				// ensure this runs on the main thread and that AI still should move
 				gui::thread::asyncExecInMainThread([this]() {
-					if (_state.currentPlayer() == _aiPlayer && !_aiThinking && !_state.isFinished()) {
+					if (isCurrentPlayerAI() && !_aiThinking && !_state.isFinished()) {
 						requestAiMove();
 					}
 				});
@@ -321,7 +378,7 @@ inline void MainView::handleAiMove(const Move& move) {
 		return;
 	}
 
-	if (_state.currentPlayer() == _humanPlayer) {
+	if (!isCurrentPlayerAI()) {
 		_boardCanvas.setInteractionEnabled(true);
 		updateStatusForPhase(_boardCanvas.currentPhase());
 	} else {
@@ -330,7 +387,7 @@ inline void MainView::handleAiMove(const Move& move) {
 }
 
 inline void MainView::requestAiMove() {
-	if (_aiThinking || _state.isFinished() || _state.currentPlayer() != _aiPlayer) {
+	if (_aiThinking || _state.isFinished() || !isCurrentPlayerAI()) {
 		return;
 	}
 
@@ -403,7 +460,9 @@ inline void MainView::updateStatusForPhase(AmazonsBoardCanvas::SelectionPhase ph
 }
 
 inline void MainView::setStatusText(const td::String& text) {
-	_lblStatus.setTitle(text);
+	if (_statusBarHandler) {
+		_statusBarHandler(text);
+	}
 }
 
 inline void MainView::updateControlsState() {
@@ -421,6 +480,11 @@ inline void MainView::setToolbarStateHandler(std::function<void(bool,bool)> hand
 	_toolbarStateHandler = std::move(handler);
 }
 
+inline void MainView::setStatusBarHandler(std::function<void(const td::String&)> handler)
+{
+	_statusBarHandler = std::move(handler);
+}
+
 inline void MainView::tryHandleGameEnd() {
 	if (_state.isFinished()) {
 		_boardCanvas.setInteractionEnabled(false);
@@ -435,12 +499,30 @@ inline void MainView::tryHandleGameEnd() {
 
 inline void MainView::showWinnerDialog(Player winner) {
 	td::String title = tr("gameOver");
-	td::String message = (winner == _humanPlayer) ? tr("msgYouWin") : tr("msgYouLose");
-	if (winner == _humanPlayer) {
+	td::String message;
+	
+	// Determine message based on player types
+	PlayerType winnerType = (winner == Player::White) ? _whitePlayerType : _blackPlayerType;
+	
+	if (_whitePlayerType == PlayerType::Human && _blackPlayerType == PlayerType::Human) {
+		// Player vs Player mode
+		message = (winner == Player::White) ? tr("msgWhiteWins") : tr("msgBlackWins");
+		_soundVictory.play();
+	} else if (_whitePlayerType == PlayerType::AI && _blackPlayerType == PlayerType::AI) {
+		// AI vs AI mode
+		message = (winner == Player::White) ? tr("msgWhiteWins") : tr("msgBlackWins");
 		_soundVictory.play();
 	} else {
-		_soundLoss.play();
+		// Player vs AI mode
+		if (winnerType == PlayerType::Human) {
+			message = tr("msgYouWin");
+			_soundVictory.play();
+		} else {
+			message = tr("msgYouLose");
+			_soundLoss.play();
+		}
 	}
+	
 	gui::Alert::show(title, message);
 }
 
@@ -477,5 +559,15 @@ inline void MainView::cancelAiFromToolbar() {
 	updateControlsState();
 	// Wait for the thread to finish cleanup to avoid races when starting new searches.
 	finalizeAiThread();
+}
+
+inline bool MainView::isCurrentPlayerAI() const {
+	Player current = _state.currentPlayer();
+	if (current == Player::White) {
+		return _whitePlayerType == PlayerType::AI;
+	} else if (current == Player::Black) {
+		return _blackPlayerType == PlayerType::AI;
+	}
+	return false;
 }
 

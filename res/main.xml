@@ -18,11 +18,20 @@
 	</Images>
 
 	<FileNames>
-		<Res id="arrow-down" path=":images/arrow-down.png"/>
-		<Res id="arrow-left" path=":images/arrow-left.png"/>
-		<Res id="arrow-right" path=":images/arrow-right.png"/>
-		<Res id="arrow-up" path=":images/arrow-up.png"/>
+		<Res id="arrow" path=":images/arrow.png"/>
 		<Res id="blaze" path=":images/blaze.png"/>
+		
+		<!-- Theme tiles -->
+		<Res id="wooden_light" path=":themes/wooden_light.png"/>
+		<Res id="wooden_dark" path=":themes/wooden_dark.png"/>
+		<Res id="ice_light" path=":themes/ice_light.png"/>
+		<Res id="ice_dark" path=":themes/ice_dark.png"/>
+		<Res id="stone_light" path=":themes/stone_light.png"/>
+		<Res id="stone_dark" path=":themes/stone_dark.png"/>
+		<Res id="diamond_light" path=":themes/diamond_light.png"/>
+		<Res id="diamond_dark" path=":themes/diamond_dark.png"/>
+		<Res id="tournament_light" path=":themes/tournament_light.png"/>
+		<Res id="tournament_dark" path=":themes/tournament_dark.png"/>
 	</FileNames>
 
 	<Sounds>

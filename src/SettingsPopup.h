@@ -8,7 +8,10 @@
 #include <gui/Image.h>
 #include <gui/PopupView.h>
 #include <gui/Label.h>
+#include <gui/CheckBox.h>
+#include <gui/ColorPicker.h>
 #include <td/String.h>
+#include <td/ColorID.h>
 
 #include "GameState.h"
 
@@ -29,6 +32,10 @@ public:
     BoardDimension currentBoardSelection() const;
     Difficulty currentDifficultySelection() const;
     BoardStyle currentBoardStyleSelection() const;
+    bool isCustomThemeEnabled() const;
+    td::ColorID getLightTileColor() const;
+    td::ColorID getDarkTileColor() const;
+    void setCustomColors(td::ColorID lightColor, td::ColorID darkColor);
 
 private:
     struct LanguageOption {
@@ -45,11 +52,20 @@ private:
     gui::ComboBox _cmbBoardStyles;
     gui::Label _lblDifficulty;
     gui::ComboBox _cmbDifficulty;
+    gui::CheckBox _chkCustomTheme;
+    gui::Label _lblLightTile;
+    gui::ColorPicker _cpLightTile;
+    gui::Label _lblDarkTile;
+    gui::ColorPicker _cpDarkTile;
     gui::GridLayout _layout;
 
-    inline static const std::array<LanguageOption, 2> kLanguages{{
+    inline static const std::array<LanguageOption, 6> kLanguages{{
         LanguageOption{"EN", "langEnglish"},
-        LanguageOption{"BA", "langBosnian"}
+        LanguageOption{"BA", "langBosnian"},
+        LanguageOption{"DE", "langGerman"},
+        LanguageOption{"ES", "langSpanish"},
+        LanguageOption{"FR", "langFrench"},
+        LanguageOption{"JP", "langJapanese"}
     }};
 
     int _initialSelection = 0;
@@ -72,7 +88,10 @@ inline SettingsPopup::SettingsPopup()
 , _lblBoard(tr("boardSize"))
 , _lblBoardStyle(tr("boardStyle"))
 , _lblDifficulty(tr("difficulty"))
-, _layout(4, 2)
+, _chkCustomTheme(tr("customTheme"))
+, _lblLightTile(tr("lightTileColor"))
+, _lblDarkTile(tr("darkTileColor"))
+, _layout(7, 2)
 {
     setPopoverButtonImage(&_imgButton);
 
@@ -81,12 +100,30 @@ inline SettingsPopup::SettingsPopup()
     gc.appendRow(_lblBoard) << _cmbBoardSizes;
     gc.appendRow(_lblBoardStyle) << _cmbBoardStyles;
     gc.appendRow(_lblDifficulty) << _cmbDifficulty;
+    gc.appendRow(_chkCustomTheme, 2);
+    gc.appendRow(_lblLightTile) << _cpLightTile;
+    gc.appendRow(_lblDarkTile) << _cpDarkTile;
     setLayout(&_layout);
 
     populateLanguages();
     populateBoardSizes();
     populateBoardStyles();
     populateDifficulties();
+    
+    // Load custom colors from app properties
+    auto* app = gui::getApplication();
+    auto* props = app->getProperties();
+    td::ColorID lightColor = props ? static_cast<td::ColorID>(props->getValue("customLightTile", static_cast<int>(td::ColorID::White))) : td::ColorID::White;
+    td::ColorID darkColor = props ? static_cast<td::ColorID>(props->getValue("customDarkTile", static_cast<int>(td::ColorID::SaddleBrown))) : td::ColorID::SaddleBrown;
+    _cpLightTile.setValue(lightColor);
+    _cpDarkTile.setValue(darkColor);
+    
+    // Initially hide color pickers
+    _lblLightTile.hide(false, true);
+    _cpLightTile.hide(false, true);
+    _lblDarkTile.hide(false, true);
+    _cpDarkTile.hide(false, true);
+    
     _cmbLanguages.onChangedSelection([this]() { handleSelectionChanged(); });
     _cmbBoardSizes.onChangedSelection([this]() {
         if (_suppressSettingsSignals) {
@@ -122,6 +159,38 @@ inline SettingsPopup::SettingsPopup()
         }
         if (_boardStyleChangedHandler) {
             _boardStyleChangedHandler(static_cast<BoardStyle>(index));
+        }
+    });
+    
+    // Handle custom theme checkbox
+    _chkCustomTheme.onClick([this]() {
+        bool useCustom = _chkCustomTheme.isChecked();
+        _lblLightTile.hide(!useCustom, true);
+        _cpLightTile.hide(!useCustom, true);
+        _lblDarkTile.hide(!useCustom, true);
+        _cpDarkTile.hide(!useCustom, true);
+        
+        if (useCustom && _boardStyleChangedHandler && !_suppressSettingsSignals) {
+            _boardStyleChangedHandler(BoardStyle::CustomTheme);
+        }
+    });
+    
+    // Handle color picker changes
+    _cpLightTile.onChangedValue([this, app, props]() {
+        if (props) {
+            props->setValue("customLightTile", static_cast<int>(_cpLightTile.getValue()));
+        }
+        if (_boardStyleChangedHandler && !_suppressSettingsSignals) {
+            _boardStyleChangedHandler(BoardStyle::CustomTheme);
+        }
+    });
+    
+    _cpDarkTile.onChangedValue([this, app, props]() {
+        if (props) {
+            props->setValue("customDarkTile", static_cast<int>(_cpDarkTile.getValue()));
+        }
+        if (_boardStyleChangedHandler && !_suppressSettingsSignals) {
+            _boardStyleChangedHandler(BoardStyle::CustomTheme);
         }
     });
 }
@@ -171,9 +240,12 @@ inline void SettingsPopup::populateBoardSizes() {
 inline void SettingsPopup::populateBoardStyles() {
     _cmbBoardStyles.addItem(tr("woodenTheme"));
     _cmbBoardStyles.addItem(tr("blackWhiteTheme"));
-    _cmbBoardStyles.addItem(tr("greenTheme"));
-    _cmbBoardStyles.addItem(tr("blueTheme"));
-    _cmbBoardStyles.addItem(tr("roseTheme"));
+    _cmbBoardStyles.addItem(tr("iceTheme"));
+    _cmbBoardStyles.addItem(tr("stoneTheme"));
+    _cmbBoardStyles.addItem(tr("diamondTheme"));
+    _cmbBoardStyles.addItem(tr("tournamentTheme"));
+    _cmbBoardStyles.addItem(tr("bubblegumTheme"));
+    // CustomTheme not in list - only accessible via checkbox
 }
 
 inline void SettingsPopup::populateDifficulties() {
@@ -211,8 +283,21 @@ inline void SettingsPopup::syncSelections(BoardDimension board, Difficulty diffi
     }
     int diffIndex = std::clamp(static_cast<int>(difficulty), 0, 2);
     _cmbDifficulty.selectIndex(diffIndex);
-    int styleIndex = std::clamp(static_cast<int>(style), 0, 4);
-    _cmbBoardStyles.selectIndex(styleIndex);
+    
+    // Update custom theme checkbox and color picker visibility
+    bool isCustom = (style == BoardStyle::CustomTheme);
+    _chkCustomTheme.setChecked(isCustom);
+    _lblLightTile.hide(!isCustom, true);
+    _cpLightTile.hide(!isCustom, true);
+    _lblDarkTile.hide(!isCustom, true);
+    _cpDarkTile.hide(!isCustom, true);
+    
+    // Select the appropriate combo item (ignore CustomTheme as it's not in the list)
+    if (!isCustom) {
+        int styleIndex = std::clamp(static_cast<int>(style), 0, static_cast<int>(BoardStyle::BubblegumTheme));
+        _cmbBoardStyles.selectIndex(styleIndex);
+    }
+    
     _suppressSettingsSignals = false;
 }
 
@@ -233,9 +318,30 @@ inline Difficulty SettingsPopup::currentDifficultySelection() const {
 }
 
 inline BoardStyle SettingsPopup::currentBoardStyleSelection() const {
+    // If custom theme checkbox is checked, return CustomTheme
+    if (_chkCustomTheme.isChecked()) {
+        return BoardStyle::CustomTheme;
+    }
     int index = _cmbBoardStyles.getSelectedIndex();
     if (index < 0) {
         return BoardStyle::Wooden;
     }
-    return static_cast<BoardStyle>(std::clamp(index, 0, 4));
+    return static_cast<BoardStyle>(std::clamp(index, 0, static_cast<int>(BoardStyle::BubblegumTheme)));
+}
+
+inline bool SettingsPopup::isCustomThemeEnabled() const {
+    return _chkCustomTheme.isChecked();
+}
+
+inline td::ColorID SettingsPopup::getLightTileColor() const {
+    return _cpLightTile.getValue();
+}
+
+inline td::ColorID SettingsPopup::getDarkTileColor() const {
+    return _cpDarkTile.getValue();
+}
+
+inline void SettingsPopup::setCustomColors(td::ColorID lightColor, td::ColorID darkColor) {
+    _cpLightTile.setValue(lightColor);
+    _cpDarkTile.setValue(darkColor);
 }

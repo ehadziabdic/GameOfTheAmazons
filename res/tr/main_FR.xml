@@ -1,0 +1,74 @@
+<?xml version='1.0'?>
+<DevRes>
+    <Translations>
+        <!-- Title bar -->
+        <Res id="appTitle" tr="Le Jeu des Amazones"/>
+        <Res id="settings" tr="Paramètres"/>
+        <Res id="settingsTT" tr="Ajuster l'apparence, la difficulté et la langue. Changer la langue nécessite un redémarrage."/>
+        <Res id="newGame" tr="Nouvelle Partie"/>
+        <Res id="newGameTT" tr="Lancer une nouvelle partie."/>
+        <Res id="undo" tr="Annuler"/>
+        <Res id="undoTT" tr="Annuler le dernier déplacement de la reine si la flèche n'a pas encore été tirée."/>
+        <Res id="cancel" tr="Arrêter l'IA"/>
+        <Res id="cancelTT" tr="Arrêter le processus de réflexion de l'IA pour quitter le jeu en toute sécurité."/>
+
+        <!-- Settings -->
+        <Res id="boardSize" tr="Taille du plateau"/>
+        <Res id="boardStyle" tr="Style du plateau"/>
+        <Res id="difficulty" tr="Difficulté"/>
+        <Res id="language" tr="Langue"/>
+        <Res id="langEnglish" tr="Anglais"/>
+        <Res id="langBosnian" tr="Bosnien"/>
+        <Res id="langGerman" tr="Allemand"/>
+        <Res id="langSpanish" tr="Espagnol"/>
+        <Res id="langFrench" tr="Français"/>
+        <Res id="langJapanese" tr="Japonais"/>
+
+        <!-- Difficulty -->
+        <Res id="Easy" tr="Facile"/>
+        <Res id="EasyTT" tr="Passer en mode Facile"/>
+        <Res id="Medium" tr="Moyen"/>
+        <Res id="MediumTT" tr="Passer en mode Moyen"/>
+        <Res id="Hard" tr="Difficile"/>
+        <Res id="HardTT" tr="Passer en mode Difficile"/>
+
+        <!-- Themes -->
+        <Res id="woodenTheme" tr="Thème Bois"/>
+        <Res id="iceTheme" tr="Thème Glace"/>
+        <Res id="stoneTheme" tr="Thème pierre"/>
+        <Res id="diamondTheme" tr="Thème diamant"/>
+        <Res id="tournamentTheme" tr="Thème tournoi"/>
+        <Res id="bubblegumTheme" tr="Thème chewing-gum"/>
+        <Res id="blackWhiteTheme" tr="Thème Noir / Blanc"/>
+        <Res id="customTheme" tr="Thème personnalisé"/>
+        <Res id="lightTileColor" tr="Couleur case claire"/>
+        <Res id="darkTileColor" tr="Couleur case foncée"/>
+
+        <!-- Status messages -->
+        <Res id="statusSelectQueen" tr="STATUT : Sélectionnez une reine à déplacer"/>
+        <Res id="statusSelectDestination" tr="STATUT : Choisissez la destination de la reine"/>
+        <Res id="statusSelectArrow" tr="STATUT : Sélectionnez une cible pour la flèche. Pour annuler, cliquez sur le bouton Annuler"/>
+        <Res id="statusAiThinking" tr="STATUT : L'IA réfléchit..."/>
+        <Res id="statusGameFinished" tr="STATUT : Partie terminée"/>
+        <Res id="aiThinking" tr="L'IA réfléchit..."/>
+
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="Joueur 1 :"/>
+        <Res id="blackPlayer" tr="Joueur 2 :"/>
+        <Res id="human" tr="Joueur"/>
+        <Res id="ai" tr="IA"/>
+
+        <!-- Game Over messages -->
+        <Res id="gameOver" tr="Fin de la partie"/>
+        <Res id="msgYouWin" tr="Vous avez conquis le plateau !"/>
+        <Res id="msgYouLose" tr="Plus de mouvements. Vous avez perdu."/>
+        <Res id="msgWhiteWins" tr="Les Blancs gagnent !"/>
+        <Res id="msgBlackWins" tr="Les Noirs gagnent !"/>
+
+        <!-- Restart -->
+        <Res id="RestartRequired" tr="Redémarrage requis"/>
+        <Res id="RestartRequiredInfo" tr="Certains paramètres modifiés nécessitent un redémarrage de l'application pour prendre effet"/>
+        <Res id="Restart" tr="Redémarrer"/>
+        <Res id="DoNoRestart" tr="Ne pas redémarrer"/>
+    </Translations>
+</DevRes>

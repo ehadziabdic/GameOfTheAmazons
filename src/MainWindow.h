@@ -4,15 +4,18 @@
 #include "Algorithms.h"
 #include "Rules.h"
 #include "ToolBarMain.h"
+#include "StatusBar.h"
 
 class MainWindow : public gui::Window {
 protected:
     MainView view;
     ToolBarMain _toolBar;
+    StatusBar _statusBar;
 public:
     MainWindow() : gui::Window(gui::Geometry(50, 50, 1440, 800)) {
         setTitle(tr("appTitle"));
             setToolBar(_toolBar);
+            setStatusBar(_statusBar);
             // Wire MainView toolbar state notifications to the window toolbar
             view.setToolbarStateHandler([this](bool allowChanges, bool allowUndo){
                 // New game item: menu 20 action 10
@@ -24,6 +27,10 @@ public:
                 // Cancel item: menu 20 action 12 (enabled when AI is running -> !allowChanges)
                 gui::ToolBarItem* pCancel = _toolBar.getItem(20, 0, 0, 12);
                 if (pCancel) pCancel->enable(!allowChanges);
+            });
+            // Wire MainView status update handler to the status bar
+            view.setStatusBarHandler([this](const td::String& text){
+                _statusBar.setStatusText(text);
             });
         setCentralView(&view);
     }

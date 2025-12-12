@@ -37,6 +37,7 @@ public:
     void notifyMoveApplied(const Move& move);
     void resetSelections();
     void setBoardStyle(Style style);
+    void setCustomColors(td::ColorID lightColor, td::ColorID darkColor);
     [[nodiscard]] SelectionPhase currentPhase() const { return _phase; }
     void setAnimationFinishedHandler(std::function<void()> handler);
     [[nodiscard]] bool isAnimating() const;
@@ -71,6 +72,12 @@ private:
     double _cellSize = 0.0;
     double _padding = 24.0;
     Style _boardStyle = Style::Wooden;
+    td::ColorID _customLightColor = td::ColorID::White;
+    td::ColorID _customDarkColor = td::ColorID::SaddleBrown;
+    
+    // Theme tile images
+    gui::Image _lightTileImage;
+    gui::Image _darkTileImage;
 
     Position _selectedQueen;
     Position _selectedDestination;
@@ -93,15 +100,12 @@ private:
     struct ImageResources {
         inline static gui::Image whiteQueen;
         inline static gui::Image blackQueen;
-        inline static gui::Image arrowUp;
-        inline static gui::Image arrowDown;
-        inline static gui::Image arrowLeft;
-        inline static gui::Image arrowRight;
+        inline static gui::Image arrow;
         inline static gui::Image impact;
         inline static bool loaded = false;
 
         static void preload();
-        static const gui::Image& arrowForDelta(int dRow, int dCol);
+        static double calculateArrowAngle(int dRow, int dCol);
     private:
         static void loadImage(gui::Image& image, const char* id);
     };
@@ -150,7 +154,45 @@ inline void AmazonsBoardCanvas::setGameState(GameState* state) {
 
 inline void AmazonsBoardCanvas::setBoardStyle(Style style) {
     _boardStyle = style;
+    
+    // Load theme tile images if needed using proper resource loading
+    auto loadThemeImage = [](gui::Image& image, const char* id) {
+        td::String fn = gui::getResFileName(id);
+        bool hasPath = fn.c_str() && fn.c_str()[0] != '\0';
+        if (!hasPath) {
+            td::String colonId(":");
+            colonId += id;
+            fn = colonId;
+        }
+        image.load(fn);
+    };
+    
+    if (style == Style::Wooden) {
+        loadThemeImage(_lightTileImage, "wooden_light");
+        loadThemeImage(_darkTileImage, "wooden_dark");
+    } else if (style == Style::IceTheme) {
+        loadThemeImage(_lightTileImage, "ice_light");
+        loadThemeImage(_darkTileImage, "ice_dark");
+    } else if (style == Style::StoneTheme) {
+        loadThemeImage(_lightTileImage, "stone_light");
+        loadThemeImage(_darkTileImage, "stone_dark");
+    } else if (style == Style::DiamondTheme) {
+        loadThemeImage(_lightTileImage, "diamond_light");
+        loadThemeImage(_darkTileImage, "diamond_dark");
+    } else if (style == Style::TournamentTheme) {
+        loadThemeImage(_lightTileImage, "tournament_light");
+        loadThemeImage(_darkTileImage, "tournament_dark");
+    }
+    
     reDraw();
+}
+
+inline void AmazonsBoardCanvas::setCustomColors(td::ColorID lightColor, td::ColorID darkColor) {
+    _customLightColor = lightColor;
+    _customDarkColor = darkColor;
+    if (_boardStyle == Style::CustomTheme) {
+        reDraw();
+    }
 }
 
 inline void AmazonsBoardCanvas::setMoveHandler(MoveHandler handler) {
@@ -456,29 +498,38 @@ inline void AmazonsBoardCanvas::drawBoardGrid() const {
     int dim = board.dimension();
     for (int row = 0; row < dim; ++row) {
         for (int col = 0; col < dim; ++col) {
-            gui::Shape cell;
             auto rect = cellRect({row, col});
-            cell.createRect(rect);
             bool light = ((row + col) % 2) == 0;
-            if (_boardStyle == Style::Wooden) {
-                auto fillColor = light ? td::ColorID::SaddleBrown : td::ColorID::BurlyWood;
-                cell.drawFillAndWire(fillColor, td::ColorID::Black);
-            } else if (_boardStyle == Style::BlackWhite) {
-                auto fillColor = light ? td::ColorID::White : td::ColorID::Black;
-                cell.drawFillAndWire(fillColor, td::ColorID::Silver);
-            } else if (_boardStyle == Style::GreenTheme) {
-                auto fillColor = light ? td::ColorID::Beige : td::ColorID::OliveDrab;
-                cell.drawFillAndWire(fillColor, td::ColorID::DarkOliveGreen);
-            } else if (_boardStyle == Style::BlueTheme) {
-                auto fillColor = light ? td::ColorID::Azure : td::ColorID::SteelBlue;
-                cell.drawFillAndWire(fillColor, td::ColorID::MidnightBlue);
-            } else if (_boardStyle == Style::RoseTheme) {
-                auto fillColor = light ? td::ColorID::White : td::ColorID::LightPink;
-                cell.drawFillAndWire(fillColor, td::ColorID::HotPink);
-            } else {
-                // Fallback to wooden if unknown
-                auto fillColor = light ? td::ColorID::SaddleBrown : td::ColorID::BurlyWood;
-                cell.drawFillAndWire(fillColor, td::ColorID::Black);
+            
+            // Image-based themes
+            if (_boardStyle == Style::Wooden || _boardStyle == Style::IceTheme || 
+                _boardStyle == Style::StoneTheme || _boardStyle == Style::DiamondTheme || 
+                _boardStyle == Style::TournamentTheme) {
+                const gui::Image& tileImage = light ? _lightTileImage : _darkTileImage;
+                if (tileImage.isOK()) {
+                    // Use simpler draw for better performance
+                    tileImage.draw(rect);
+                }
+            }
+            // Color-based themes
+            else {
+                gui::Shape cell;
+                cell.createRect(rect);
+                
+                if (_boardStyle == Style::BlackWhite) {
+                    auto fillColor = light ? td::ColorID::White : td::ColorID::Black;
+                    cell.drawFillAndWire(fillColor, td::ColorID::Silver);
+                } else if (_boardStyle == Style::BubblegumTheme) {
+                    auto fillColor = light ? td::ColorID::White : td::ColorID::LightPink;
+                    cell.drawFillAndWire(fillColor, td::ColorID::HotPink);
+                } else if (_boardStyle == Style::CustomTheme) {
+                    auto fillColor = light ? _customLightColor : _customDarkColor;
+                    cell.drawFillAndWire(fillColor, td::ColorID::Black);
+                } else {
+                    // Fallback
+                    auto fillColor = light ? td::ColorID::SaddleBrown : td::ColorID::BurlyWood;
+                    cell.drawFillAndWire(fillColor, td::ColorID::Black);
+                }
             }
         }
     }
@@ -563,8 +614,19 @@ inline void AmazonsBoardCanvas::drawAnimations() const {
             rect = insetRect(rect, _cellSize * 0.1);
             int dRow = anim.to.row - anim.from.row;
             int dCol = anim.to.col - anim.from.col;
-            const gui::Image& img = ImageResources::arrowForDelta(dRow, dCol);
-            img.draw(rect, gui::Image::AspectRatio::Keep, td::HAlignment::Center, td::VAlignment::Center);
+            double angle = ImageResources::calculateArrowAngle(dRow, dCol);
+            
+            gui::Transformation::saveContext();
+            gui::Transformation t;
+            gui::Point center((rect.left + rect.right) * 0.5, (rect.top + rect.bottom) * 0.5);
+            t.translate(center.x, center.y);
+            t.rotateDeg(angle);
+            t.translate(-center.x, -center.y);
+            t.appendToContext();
+            
+            ImageResources::arrow.draw(rect, gui::Image::AspectRatio::Keep, td::HAlignment::Center, td::VAlignment::Center);
+            
+            gui::Transformation::restoreContext();
         } else {
             auto player = (anim.tile == TileContent::WhiteQueen) ? Player::White : Player::Black;
             const gui::Image& img = (player == Player::White) ? ImageResources::whiteQueen : ImageResources::blackQueen;
@@ -628,19 +690,18 @@ inline void AmazonsBoardCanvas::ImageResources::preload() {
     }
     loadImage(whiteQueen, "whiteQueen");
     loadImage(blackQueen, "blackQueen");
-    loadImage(arrowUp, "arrow-up");
-    loadImage(arrowDown, "arrow-down");
-    loadImage(arrowRight, "arrow-right");
-    loadImage(arrowLeft, "arrow-left");
+    loadImage(arrow, "arrow");
     loadImage(impact, "blaze");
     loaded = true;
 }
 
-inline const gui::Image& AmazonsBoardCanvas::ImageResources::arrowForDelta(int dRow, int dCol) {
-    if (std::abs(dCol) >= std::abs(dRow)) {
-        return dCol >= 0 ? arrowRight : arrowLeft;
-    }
-    return dRow >= 0 ? arrowDown : arrowUp;
+inline double AmazonsBoardCanvas::ImageResources::calculateArrowAngle(int dRow, int dCol) {
+    // Calculate angle in degrees. atan2 gives angle from positive x-axis.
+    // dCol is x-axis (positive right), dRow is y-axis (positive down)
+    // Arrow image points to the right (0 degrees)
+    double angleRad = std::atan2(static_cast<double>(dRow), static_cast<double>(dCol));
+    double angleDeg = angleRad * 180.0 / 3.14159265358979323846;
+    return angleDeg;
 }
 
 inline void AmazonsBoardCanvas::ImageResources::loadImage(gui::Image& image, const char* id) {

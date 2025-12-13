@@ -51,13 +51,12 @@
     <Res id="statusGameFinished" tr="STATUS: Igra završena"/>
     <Res id="aiThinking" tr="AI razmišlja..."/>
 
-	<!-- Player Type -->
-    <Res id="whitePlayer" tr="Igrač 1:"/>
-    <Res id="blackPlayer" tr="Igrač 2:"/>
-    <Res id="human" tr="Igrač"/>
-    <Res id="ai" tr="AI"/>
-
-	<!-- Game Over messages -->
+        <!-- Player Type -->
+        <Res id="whitePlayer" tr="Bjeli:"/>
+        <Res id="blackPlayer" tr="Crni:"/>
+        <Res id="human" tr="Igrač"/>
+        <Res id="ai" tr="AI"/>
+        <Res id="animSpeed" tr="Brzina animacije:"/>	<!-- Game Over messages -->
     <Res id="gameOver" tr="Igra je gotova"/>
     <Res id="msgYouWin" tr="Osvojili ste tablu!"/>
     <Res id="msgYouLose" tr="Nema preostalih poteza. Izgubili ste."/>

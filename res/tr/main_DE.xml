@@ -35,10 +35,10 @@
         <!-- Themes -->
         <Res id="woodenTheme" tr="Holz-Design"/>
         <Res id="iceTheme" tr="Eis-Design"/>
-        <Res id="stoneTheme" tr="Stein-Design"/>
-        <Res id="diamondTheme" tr="Diamant-Design"/>
-        <Res id="tournamentTheme" tr="Turnier-Design"/>
-        <Res id="bubblegumTheme" tr="Kaugummi-Design"/>
+        <Res id="stoneTheme" tr="Stone Theme"/>
+        <Res id="diamondTheme" tr="Diamond Theme"/>
+        <Res id="tournamentTheme" tr="Tournament Theme"/>
+        <Res id="bubblegumTheme" tr="Bubblegum Theme"/>
         <Res id="blackWhiteTheme" tr="Schwarz-Weiß-Design"/>
 	    <Res id="customTheme" tr="Benutzerdefiniertes Design"/>
 	    <Res id="lightTileColor" tr="Farbe helles Feld"/>
@@ -53,10 +53,11 @@
         <Res id="aiThinking" tr="KI denkt nach..."/>
 
         <!-- Player Type -->
-        <Res id="whitePlayer" tr="Spieler 1:"/>
-        <Res id="blackPlayer" tr="Spieler 2:"/>
+        <Res id="whitePlayer" tr="Weiß:"/>
+        <Res id="blackPlayer" tr="Schwarz:"/>
         <Res id="human" tr="Spieler"/>
         <Res id="ai" tr="KI"/>
+        <Res id="animSpeed" tr="Animationsgeschwindigkeit:"/>
 
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Spiel vorbei"/>

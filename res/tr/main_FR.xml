@@ -35,11 +35,11 @@
         <!-- Themes -->
         <Res id="woodenTheme" tr="Thème Bois"/>
         <Res id="iceTheme" tr="Thème Glace"/>
-        <Res id="stoneTheme" tr="Thème pierre"/>
-        <Res id="diamondTheme" tr="Thème diamant"/>
-        <Res id="tournamentTheme" tr="Thème tournoi"/>
-        <Res id="bubblegumTheme" tr="Thème chewing-gum"/>
-        <Res id="blackWhiteTheme" tr="Thème Noir / Blanc"/>
+        <Res id="stoneTheme" tr="Stone Theme"/>
+        <Res id="diamondTheme" tr="Diamond Theme"/>
+        <Res id="tournamentTheme" tr="Tournament Theme"/>
+        <Res id="bubblegumTheme" tr="Bubblegum Theme"/>
+        <Res id="blackWhiteTheme" tr="Thème Noir &amp; Blanc"/>
         <Res id="customTheme" tr="Thème personnalisé"/>
         <Res id="lightTileColor" tr="Couleur case claire"/>
         <Res id="darkTileColor" tr="Couleur case foncée"/>
@@ -53,10 +53,11 @@
         <Res id="aiThinking" tr="L'IA réfléchit..."/>
 
         <!-- Player Type -->
-        <Res id="whitePlayer" tr="Joueur 1 :"/>
-        <Res id="blackPlayer" tr="Joueur 2 :"/>
+        <Res id="whitePlayer" tr="Blancs:"/>
+        <Res id="blackPlayer" tr="Noirs:"/>
         <Res id="human" tr="Joueur"/>
         <Res id="ai" tr="IA"/>
+        <Res id="animSpeed" tr="Vitesse d'animation:"/>
 
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Fin de la partie"/>

@@ -35,10 +35,10 @@
         <!-- Themes -->
         <Res id="woodenTheme" tr="木目調テーマ"/>
         <Res id="iceTheme" tr="氷テーマ"/>
-        <Res id="stoneTheme" tr="石のテーマ"/>
-        <Res id="diamondTheme" tr="ダイヤのテーマ"/>
-        <Res id="tournamentTheme" tr="トーナメント用テーマ"/>
-        <Res id="bubblegumTheme" tr="ガムのテーマ"/>
+        <Res id="stoneTheme" tr="Stone Theme"/>
+        <Res id="diamondTheme" tr="Diamond Theme"/>
+        <Res id="tournamentTheme" tr="Tournament Theme"/>
+        <Res id="bubblegumTheme" tr="Bubblegum Theme"/>
         <Res id="blackWhiteTheme" tr="白黒テーマ"/>
         <Res id="customTheme" tr="カスタムテーマ"/>
         <Res id="lightTileColor" tr="明るいマスの色"/>
@@ -53,10 +53,11 @@
         <Res id="aiThinking" tr="AIが思考中..."/>
 
         <!-- Player Type -->
-        <Res id="whitePlayer" tr="プレイヤー一(1):"/>
-        <Res id="blackPlayer" tr="プレイヤー二(2):"/>
+        <Res id="whitePlayer" tr="白:"/>
+        <Res id="blackPlayer" tr="黒:"/>
         <Res id="human" tr="プレイヤー"/>
         <Res id="ai" tr="AI"/>
+        <Res id="animSpeed" tr="アニメーション速度:"/>
 
         <!-- Game Over messages -->
         <Res id="gameOver" tr="ゲームオーバー"/>

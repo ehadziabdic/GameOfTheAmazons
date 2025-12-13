@@ -53,10 +53,11 @@
         <Res id="aiThinking" tr="AI is thinking..."/>
 
         <!-- Player Type -->
-        <Res id="whitePlayer" tr="Player 1:"/>
-        <Res id="blackPlayer" tr="Player 2:"/>
+        <Res id="whitePlayer" tr="White:"/>
+        <Res id="blackPlayer" tr="Black:"/>
         <Res id="human" tr="Player"/>
         <Res id="ai" tr="AI"/>
+        <Res id="animSpeed" tr="Animation Speed:"/>
 
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Game Over"/>

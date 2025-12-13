@@ -14,6 +14,7 @@
 #include <gui/Sound.h>
 #include <gui/View.h>
 #include <gui/Thread.h>
+#include <gui/Slider.h>
 
 #include <thread>
 #include <atomic>
@@ -47,6 +48,8 @@ private:
 	gui::ComboBox _cmbWhitePlayerType;
 	gui::Label _lblBlack;
 	gui::ComboBox _cmbBlackPlayerType;
+	gui::Label _lblAnimSpeed;
+	gui::Slider _slAnimSpeed;
 	gui::Image _imgNewGame;
 	gui::Image _imgUndo;
 	gui::Image _imgSettings;
@@ -67,6 +70,8 @@ private:
 	PlayerType _whitePlayerType = PlayerType::Human;
 	PlayerType _blackPlayerType = PlayerType::AI;
 	bool _gameOverDialogShown = false;
+	const int _maxAiDelay = 3000;
+	int _aiDelayMS = 500;
 
 	std::thread _aiThread;
 	bool _aiThinking = false;
@@ -94,7 +99,10 @@ private:
 };
 
 inline MainView::MainView()
-: _layout(3, 1)
+: _layout(2, 6)
+	, _lblWhite(tr("whitePlayer"))
+	, _lblBlack(tr("blackPlayer"))
+	, _lblAnimSpeed(tr("animSpeed"))
 	, _imgNewGame(":reset")
 	, _imgUndo(":undo")
 	, _imgSettings(":settings")
@@ -130,25 +138,25 @@ inline void MainView::focusBoard() {
 
 inline void MainView::buildLayout() {
 	gui::GridComposer composer(_layout);
-	// Row 1: Black player combo
-	composer.appendRow(_cmbBlackPlayerType);
-	// Row 2: Board
-	composer.appendRow(_boardCanvas);
-	// Row 3: White player combo
-	composer.appendRow(_cmbWhitePlayerType);
+	// Row 1: Labels and combos in horizontal layout
+	composer.appendRow(_lblWhite) << _cmbWhitePlayerType << _lblBlack << _cmbBlackPlayerType << _lblAnimSpeed << _slAnimSpeed;
+	// Row 2: Board spanning all columns
+	composer.appendRow(_boardCanvas, -1);
 }
 
 inline void MainView::populateControls() {
-	// Player type combos (labels not needed - will use combo title/tooltip)
-	_cmbWhitePlayerType.setToolTip(tr("whitePlayer"));
+	// Player type combos
 	_cmbWhitePlayerType.addItem(tr("human"));
 	_cmbWhitePlayerType.addItem(tr("ai"));
 	_cmbWhitePlayerType.selectIndex(0); // Default to Human
 	
-	_cmbBlackPlayerType.setToolTip(tr("blackPlayer"));
 	_cmbBlackPlayerType.addItem(tr("human"));
 	_cmbBlackPlayerType.addItem(tr("ai"));
 	_cmbBlackPlayerType.selectIndex(1); // Default to AI
+	
+	// Animation speed slider
+	_slAnimSpeed.setRange(0, _maxAiDelay);
+	_slAnimSpeed.setValue(_maxAiDelay - _aiDelayMS);
 	
 	_btnNewGame.setToolTip(tr("newGame"));
 	_btnNewGame.setFlat();
@@ -200,6 +208,12 @@ inline void MainView::wireCallbacks() {
 		startNewGame();
 		// Play click sound to indicate reset/new-game completed
 		gui::Sound::play(gui::Sound::Type::SelectionChanged);
+	});
+
+	// Animation speed slider
+	_slAnimSpeed.onChangedValue([this]() {
+		double val = _slAnimSpeed.getValue();
+		_aiDelayMS = _maxAiDelay - int(val);
 	});
 
 	// Settings button opens a dialog containing settings controls.
@@ -405,6 +419,10 @@ inline void MainView::requestAiMove() {
 	_aiThread = std::thread([this, snapshot, difficulty]() mutable {
 		try {
 			Move bestMove = getBestMove(snapshot, difficulty, &_cancelAi);
+			// Add delay for AI vs AI mode
+			if (_whitePlayerType == PlayerType::AI && _blackPlayerType == PlayerType::AI) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(_aiDelayMS));
+			}
 			gui::thread::asyncExecInMainThread([this, bestMove]() {
 				handleAiMove(bestMove);
 			});

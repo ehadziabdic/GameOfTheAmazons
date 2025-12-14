@@ -41,6 +41,7 @@ public:
     [[nodiscard]] SelectionPhase currentPhase() const { return _phase; }
     void setAnimationFinishedHandler(std::function<void()> handler);
     [[nodiscard]] bool isAnimating() const;
+    void showGameOverOverlay(bool victory);
 
 protected:
     void onDraw(const gui::Rect& rect) override;
@@ -96,6 +97,13 @@ private:
     gui::Sound _soundBlazeHit;
 
     gui::Timer _animationTimer;
+    
+    // Victory/Defeat overlay
+    gui::Image _victoryImage;
+    gui::Image _defeatImage;
+    bool _showGameOverOverlay = false;
+    bool _isVictory = false;
+    gui::Timer _overlayTimer;
 
     struct ImageResources {
         inline static gui::Image whiteQueen;
@@ -139,8 +147,11 @@ private:
 inline AmazonsBoardCanvas::AmazonsBoardCanvas()
 : Canvas({gui::InputDevice::Event::PrimaryClicks})
 , _animationTimer(this, 1.0f / 60.0f, false)
-, _soundArrowFly(":arrow-fly")
-, _soundBlazeHit(":blaze-hit")
+, _soundArrowFly(gui::getResFileName("arrow-sound"))
+, _soundBlazeHit(gui::getResFileName("blaze-sound"))
+, _victoryImage(gui::getResFileName("victory-img"))
+, _defeatImage(gui::getResFileName("defeat-img"))
+, _overlayTimer(this, 2.0f, false)
 {
     enableResizeEvent(true);
 }
@@ -244,6 +255,27 @@ inline void AmazonsBoardCanvas::onDraw(const gui::Rect& rect) {
     drawQueens();
     drawAnimations();
     drawAiOverlay();
+    
+    // Draw game over overlay (victory/defeat)
+    if (_showGameOverOverlay) {
+        // Calculate image rect centered on board
+        gui::Rect overlayRect;
+        gui::CoordType imageSize = _cellSize * 5; // Make it 5 cells wide for better visibility
+        overlayRect.left = _boardRect.left + (_boardRect.right - _boardRect.left - imageSize) / 2;
+        overlayRect.top = _boardRect.top + (_boardRect.bottom - _boardRect.top - imageSize) / 2;
+        overlayRect.right = overlayRect.left + imageSize;
+        overlayRect.bottom = overlayRect.top + imageSize;
+        
+        if (_isVictory) {
+            if (_victoryImage.isOK()) {
+                _victoryImage.draw(overlayRect);
+            }
+        } else {
+            if (_defeatImage.isOK()) {
+                _defeatImage.draw(overlayRect);
+            }
+        }
+    }
 }
 
 inline void AmazonsBoardCanvas::onResize(const gui::Size& size) {
@@ -275,7 +307,15 @@ inline void AmazonsBoardCanvas::onPrimaryButtonPressed(const gui::InputDevice& i
     }
 }
 
-inline bool AmazonsBoardCanvas::onTimer(gui::Timer* /*pTimer*/) {
+inline bool AmazonsBoardCanvas::onTimer(gui::Timer* pTimer) {
+    // Handle overlay timer
+    if (pTimer == &_overlayTimer) {
+        _showGameOverOverlay = false;
+        _overlayTimer.stop();
+        reDraw();
+        return true;
+    }
+    
     bool keepRunning = false;
     auto advance = [](AnimationState& anim, double delta) {
         if (!anim.active) {
@@ -340,6 +380,13 @@ inline void AmazonsBoardCanvas::setAnimationFinishedHandler(std::function<void()
 
 inline bool AmazonsBoardCanvas::isAnimating() const {
     return _queenAnimation.active || _arrowAnimation.active || _arrowAnimationQueued || _impactPending || (_impactFrames > 0);
+}
+
+inline void AmazonsBoardCanvas::showGameOverOverlay(bool victory) {
+    _showGameOverOverlay = true;
+    _isVictory = victory;
+    _overlayTimer.start();
+    reDraw();
 }
 
 inline void AmazonsBoardCanvas::computeBoardGeometry() {

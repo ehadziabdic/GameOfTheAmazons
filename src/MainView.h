@@ -4,6 +4,8 @@
 #include "Algorithms.h"
 #include "SettingsPopup.h"
 #include "DialogSettings.h"
+#include "RulesView.h"
+#include "LogsView.h"
 
 #include <gui/Alert.h>
 #include <gui/Button.h>
@@ -15,6 +17,9 @@
 #include <gui/View.h>
 #include <gui/Thread.h>
 #include <gui/Slider.h>
+#include <gui/HorizontalLayout.h>
+#include <gui/VerticalNavigator.h>
+#include <gui/ViewSwitcher.h>
 
 #include <thread>
 #include <atomic>
@@ -41,9 +46,29 @@ public:
 
 	void focusBoard();
 
+protected:
+	bool onChangedSelection(gui::Navigator* pNav) override;
+
 private:
 	AmazonsBoardCanvas _boardCanvas;
-	gui::GridLayout _layout;
+	gui::HorizontalLayout _layout;
+	gui::VerticalNavigator _navigator;
+	gui::ViewSwitcher _viewSwitcher;
+	
+	// Navigator icons
+	gui::Image _navIconGame;
+	gui::Image _navIconLogs;
+	gui::Image _navIconRules;
+	
+	// Game page view
+	gui::View _gamePageView;
+	gui::GridLayout _gameLayout;
+	
+	// Individual page views
+	RulesView _rulesView;
+	LogsView _logsView;
+	
+	// Controls for game view
 	gui::Label _lblWhite;
 	gui::ComboBox _cmbWhitePlayerType;
 	gui::Label _lblBlack;
@@ -96,10 +121,19 @@ private:
 	void finalizeAiThread();
 	bool guardAgainstAiBusy() const;
 	bool isCurrentPlayerAI() const;
+	void updateLogsView();
 };
 
 inline MainView::MainView()
-: _layout(2, 6)
+: _layout(2)
+	, _navigator(3, 30, 3.0f)
+	, _viewSwitcher(3)
+	, _navIconGame(":game")
+	, _navIconLogs(":logs")
+	, _navIconRules(":rules")
+	, _gameLayout(2, 6)
+	, _logsView(&_state)
+	, _rulesView()
 	, _lblWhite(tr("whitePlayer"))
 	, _lblBlack(tr("blackPlayer"))
 	, _lblAnimSpeed(tr("animSpeed"))
@@ -110,8 +144,8 @@ inline MainView::MainView()
 	, _btnUndo(&_imgUndo, tr("undo"))
 	, _btnSettings(&_imgSettings, tr("settings"))
 	, _soundMove(":move")
-	, _soundVictory(":victory")
-	, _soundLoss(":loss")
+	, _soundVictory(gui::getResFileName("victory-sound"))
+	, _soundLoss(gui::getResFileName("loss-sound"))
 {
 	_boardCanvas.setGameState(&_state);
 	_boardCanvas.setBoardStyle(_selectedBoardStyle);
@@ -121,11 +155,33 @@ inline MainView::MainView()
 		updateControlsState();
 	});
 
-	buildLayout();
+	setMargins(0, 0, 0, 0);
+	
+	// Setup game page layout
+	gui::GridComposer gameComposer(_gameLayout);
+	gameComposer.appendRow(_lblBlack) << _cmbBlackPlayerType << _lblWhite << _cmbWhitePlayerType << _lblAnimSpeed << _slAnimSpeed;
+	gameComposer.appendRow(_boardCanvas, -1);
+	_gamePageView.setLayout(&_gameLayout);
+	
+	// Setup navigator with narrower width
+	_navigator.setItem(0, &_navIconGame, tr("navGame"));
+	_navigator.setItem(1, &_navIconLogs, tr("navLogs"));
+	_navigator.setItem(2, &_navIconRules, tr("navRules"));
+	
+	// Setup view switcher
+	_viewSwitcher.addView(&_gamePageView, true);
+	_viewSwitcher.addView(&_logsView, false);
+	_viewSwitcher.addView(&_rulesView, false);
+	
+	// Setup layout
+	_layout.append(_navigator);
+	_layout.append(_viewSwitcher);
+	
 	populateControls();
 	wireCallbacks();
 	setLayout(&_layout);
 	startNewGame();
+	updateLogsView(); // Initialize logs view with empty state
 }
 
 inline MainView::~MainView() {
@@ -136,12 +192,16 @@ inline void MainView::focusBoard() {
 	_boardCanvas.setFocus(true);
 }
 
-inline void MainView::buildLayout() {
-	gui::GridComposer composer(_layout);
-	// Row 1: Labels and combos in horizontal layout
-	composer.appendRow(_lblWhite) << _cmbWhitePlayerType << _lblBlack << _cmbBlackPlayerType << _lblAnimSpeed << _slAnimSpeed;
-	// Row 2: Board spanning all columns
-	composer.appendRow(_boardCanvas, -1);
+inline bool MainView::onChangedSelection(gui::Navigator* pNav) {
+	td::UINT2 currSelection = pNav->getCurrentSelection();
+	_viewSwitcher.showView((int)currSelection);
+	
+	// Update logs when switching to logs page (index 1 since order is Game, Logs, Rules)
+	if (currSelection == 1) {
+		updateLogsView();
+	}
+	
+	return true;
 }
 
 inline void MainView::populateControls() {
@@ -526,22 +586,27 @@ inline void MainView::showWinnerDialog(Player winner) {
 		// Player vs Player mode
 		message = (winner == Player::White) ? tr("msgWhiteWins") : tr("msgBlackWins");
 		_soundVictory.play();
+		_boardCanvas.showGameOverOverlay(true); // Show victory overlay
 	} else if (_whitePlayerType == PlayerType::AI && _blackPlayerType == PlayerType::AI) {
 		// AI vs AI mode
 		message = (winner == Player::White) ? tr("msgWhiteWins") : tr("msgBlackWins");
 		_soundVictory.play();
+		_boardCanvas.showGameOverOverlay(true); // Show victory overlay
 	} else {
 		// Player vs AI mode
 		if (winnerType == PlayerType::Human) {
 			message = tr("msgYouWin");
 			_soundVictory.play();
+			_boardCanvas.showGameOverOverlay(true); // Victory
 		} else {
 			message = tr("msgYouLose");
 			_soundLoss.play();
+			_boardCanvas.showGameOverOverlay(false); // Defeat
 		}
 	}
 	
-	gui::Alert::show(title, message);
+	// Don't show system alert, use overlay instead
+	// gui::Alert::show(title, message);
 }
 
 inline BoardDimension MainView::selectedBoardDimension() const {
@@ -587,5 +652,9 @@ inline bool MainView::isCurrentPlayerAI() const {
 		return _blackPlayerType == PlayerType::AI;
 	}
 	return false;
+}
+
+inline void MainView::updateLogsView() {
+	_logsView.updateMoveHistory();
 }
 

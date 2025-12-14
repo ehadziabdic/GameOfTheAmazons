@@ -59,6 +59,11 @@
         <Res id="ai" tr="IA"/>
         <Res id="animSpeed" tr="Velocidad de animación:"/>
 
+        <!-- Navigation Pages -->
+        <Res id="navGame" tr="Juego"/>
+        <Res id="navRules" tr="Reglas"/>
+        <Res id="navLogs" tr="Registros"/>
+
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Fin del juego"/>
         <Res id="msgYouWin" tr="¡Has conquistado el tablero!"/>

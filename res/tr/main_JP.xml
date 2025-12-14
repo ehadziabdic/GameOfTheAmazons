@@ -59,6 +59,11 @@
         <Res id="ai" tr="AI"/>
         <Res id="animSpeed" tr="アニメーション速度:"/>
 
+        <!-- Navigation Pages -->
+        <Res id="navGame" tr="ゲーム"/>
+        <Res id="navRules" tr="ルール"/>
+        <Res id="navLogs" tr="ログ"/>
+
         <!-- Game Over messages -->
         <Res id="gameOver" tr="ゲームオーバー"/>
         <Res id="msgYouWin" tr="盤面を制圧しました！"/>

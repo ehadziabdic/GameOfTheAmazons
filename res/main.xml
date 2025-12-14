@@ -2,15 +2,20 @@
 <DevRes>
 	<Images>
 		<!-- Title bar icons-->
-		<Res id="settings" path = "Work/Common/Icons/SettingsBlue48.png"/>
-		<Res id="reset" path="Work/Common/Icons/add2.png"/>
-		<Res id="undo" path="Work/Common/Icons/undo2.png"/>
-		<Res id="cancle" path="Work/Common/Icons/x.png"/>
+		<Res id="settings" path = ":images/settings.png"/>
+		<Res id="reset" path=":images/reset.png"/>
+		<Res id="undo" path=":images/undo.png"/>
+		<Res id="cancle" path=":images/cancle.png"/>
+
+		<!-- Navigation icons -->
+		<Res id="game" path=":images/game.png"/>
+		<Res id="rules" path=":images/info.png"/>
+		<Res id="logs" path=":images/history.png"/>
 
 		<!-- Difficulty buttons -->
-		<Res id="easy" path = "Work/Common/Icons/LevelEasy64.png"/>
-		<Res id="medium" path = "Work/Common/Icons/LevelMedium64.png"/>
-		<Res id="hard" path = "Work/Common/Icons/LevelHard64.png"/>
+		<Res id="easy" path = ":images/easy.png"/>
+		<Res id="medium" path = ":images/medium.png"/>
+		<Res id="hard" path = ":images/hard.png"/>
 
 		<!-- Game pieces -->
 		<Res id="blackQueen" path = "Work/Common/Images/Chess/QueenBlack.png"/>
@@ -20,6 +25,12 @@
 	<FileNames>
 		<Res id="arrow" path=":images/arrow.png"/>
 		<Res id="blaze" path=":images/blaze.png"/>
+		
+		<!-- Custom sound files -->
+		<Res id="victory-sound" path=":sounds/victory.wav"/>
+		<Res id="loss-sound" path=":sounds/defeat.wav"/>
+		<Res id="blaze-sound" path=":sounds/arrow-impact.wav"/>
+		<Res id="arrow-sound" path=":sounds/arrow-swish.wav"/>
 		
 		<!-- Theme tiles -->
 		<Res id="wooden_light" path=":themes/wooden_light.png"/>
@@ -32,13 +43,13 @@
 		<Res id="diamond_dark" path=":themes/diamond_dark.png"/>
 		<Res id="tournament_light" path=":themes/tournament_light.png"/>
 		<Res id="tournament_dark" path=":themes/tournament_dark.png"/>
+
+		<!-- Game over overlay images -->
+		<Res id="victory-img" path=":images/victory.png"/>
+		<Res id="defeat-img" path=":images/defeat.png"/>
 	</FileNames>
 
 	<Sounds>
-		<Res id="blaze-hit" path=":sounds/arrow-impact.wav"/>
-		<Res id="arrow-fly" path=":sounds/arrow-swish.wav"/>
 		<Res id="move" path="Work/Common/Sounds/ChessCapture.wav"/>
-		<Res id="loss" path="Work/Common/Sounds/GameOver.wav"/>
-		<Res id="victory" path="Work/Common/Sounds/MissionSuccess.wav"/>
 	</Sounds>
 </DevRes>

@@ -59,6 +59,11 @@
         <Res id="ai" tr="KI"/>
         <Res id="animSpeed" tr="Animationsgeschwindigkeit:"/>
 
+        <!-- Navigation Pages -->
+        <Res id="navGame" tr="Spiel"/>
+        <Res id="navRules" tr="Regeln"/>
+        <Res id="navLogs" tr="Protokolle"/>
+
         <!-- Game Over messages -->
         <Res id="gameOver" tr="Spiel vorbei"/>
         <Res id="msgYouWin" tr="Du hast das Brett erobert!"/>

@@ -9,6 +9,8 @@
     <Res id="newGameTT" tr="Započnite novu igru."/>
     <Res id="undo" tr="Poništi"/>
     <Res id="undoTT" tr="Poništite posljednji potez kraljice, ako strijela još nije ispaljena."/>
+    <Res id="cancel" tr="Zaustavi AI"/>
+    <Res id="cancelTT" tr="Zaustavi proces AI razmisljanja, tako da se igra moze sigurno ugasiti."/>
 
 	<!-- Settings -->
     <Res id="boardSize" tr="Veličina table"/>
@@ -21,7 +23,6 @@
     <Res id="langSpanish" tr="Španski"/>
     <Res id="langFrench" tr="Francuski"/>
     <Res id="langJapanese" tr="Japanski"/>
-
 
 	<!-- Difficulty -->
     <Res id="Easy" tr="Lagano"/>

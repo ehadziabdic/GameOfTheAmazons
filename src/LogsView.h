@@ -21,7 +21,8 @@ public:
 		if (!_state) return;
 		
 		const auto& history = _state->moveHistory();
-		td::String logText = "Move History\n\n";
+		td::String logText = "► Move History\n";
+		logText += "---------------------------------------------------------------------------\n\n";
 		
 		if (history.empty()) {
 			logText += "No moves yet.";
@@ -29,11 +30,11 @@ public:
 			int moveNum = 1;
 			for (const auto& move : history) {
 				td::String moveStr;
-				moveStr.format("Move %d: Queen (%d,%d) -> (%d,%d), Arrow -> (%d,%d)\n", 
+				moveStr.format("► Move %d: Queen (%d,%d) -> (%d,%d), Arrow -> (%d,%d)\n", 
 					moveNum++,
-					move.queenFrom.row, move.queenFrom.col,
-					move.queenTo.row, move.queenTo.col,
-					move.arrow.row, move.arrow.col);
+					move.queenFrom.row + 1, move.queenFrom.col + 1,
+					move.queenTo.row + 1, move.queenTo.col + 1,
+					move.arrow.row + 1, move.arrow.col + 1);
 				logText += moveStr;
 			}
 		}

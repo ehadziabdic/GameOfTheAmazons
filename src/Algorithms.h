@@ -242,8 +242,8 @@ inline int minimax(GameState& state, int depth, int alpha, int beta, Player maxi
 
 inline int depthForDifficulty(Difficulty difficulty) {
     switch (difficulty) {
-    case Difficulty::Easy: return 1;
-    case Difficulty::Medium: return 2;
+    case Difficulty::Easy: return 2;
+    case Difficulty::Medium: return 3;
     case Difficulty::Hard:
     default: return 3;
     }
@@ -251,8 +251,8 @@ inline int depthForDifficulty(Difficulty difficulty) {
 
 inline std::size_t moveCapForDifficulty(Difficulty difficulty) {
     switch (difficulty) {
-    case Difficulty::Easy: return 20;
-    case Difficulty::Medium: return 80;
+    case Difficulty::Easy: return 100;
+    case Difficulty::Medium: return 120;
     case Difficulty::Hard:
     default: return 150;
     }

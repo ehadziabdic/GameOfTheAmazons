@@ -251,10 +251,10 @@ inline int depthForDifficulty(Difficulty difficulty) {
 
 inline std::size_t moveCapForDifficulty(Difficulty difficulty) {
     switch (difficulty) {
-    case Difficulty::Easy: return 6;
-    case Difficulty::Medium: return 12;
+    case Difficulty::Easy: return 20;
+    case Difficulty::Medium: return 80;
     case Difficulty::Hard:
-    default: return 20;
+    default: return 150;
     }
 }
 

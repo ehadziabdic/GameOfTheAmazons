@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Game of The Amazons
+GenericName=Strategy Board Game
+Comment=Play the strategic Game of the Amazons with AI opponent
+Icon=amazonsgame
+Exec=/usr/local/bin/AmazonsGame
+Terminal=false
+Categories=Game;BoardGame;StrategyGame;
+Keywords=amazons;strategy;board;ai;game;
+StartupNotify=true

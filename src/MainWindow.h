@@ -16,6 +16,13 @@ public:
         setTitle(tr("appTitle"));
             setToolBar(_toolBar);
             setStatusBar(_statusBar);
+            // Set window icon for Linux
+            #ifdef MU_LINUX
+                gui::Image icon48(":lnxApp48");
+                if (icon48.isOK()) {
+                    setIcon(icon48);
+                }
+            #endif
             // Wire MainView toolbar state notifications to the window toolbar
             view.setToolbarStateHandler([this](bool allowChanges, bool allowUndo){
                 // New game item: menu 20 action 10

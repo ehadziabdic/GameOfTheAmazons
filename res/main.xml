@@ -20,6 +20,13 @@
 		<!-- Game pieces -->
 		<Res id="blackQueen" path = "Work/Common/Images/Chess/QueenBlack.png"/>
 		<Res id="whiteQueen" path = "Work/Common/Images/Chess/QueenWhite.png"/>
+
+		<!-- Linux Icons -->
+		<Res id="lnxApp16" path=":appIcon/lnxApp16.png"/>
+		<Res id="lnxApp32" path=":appIcon/lnxApp32.png"/>
+		<Res id="lnxApp48" path=":appIcon/lnxApp48.png"/>
+		<Res id="lnxApp128" path=":appIcon/lnxApp128.png"/>
+		<Res id="lnxApp256" path=":appIcon/lnxApp256.png"/>
 	</Images>
 
 	<FileNames>

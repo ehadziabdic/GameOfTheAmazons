@@ -56,3 +56,17 @@ setTargetPropertiesForGUIApp(${AMAZONS_NAME} ${AMAZONS_PLIST})
 setAppIcon(${AMAZONS_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setIDEPropertiesForGUIExecutable(${AMAZONS_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setPlatformDLLPath(${AMAZONS_NAME})
+
+# Linux icon installation
+if(UNIX AND NOT APPLE)
+    set(ICON_SIZES 16 32 48 128 256)
+    foreach(SIZE ${ICON_SIZES})
+        install(FILES ${CMAKE_CURRENT_LIST_DIR}/res/appIcon/lnxApp${SIZE}.png
+                DESTINATION share/icons/hicolor/${SIZE}x${SIZE}/apps
+                RENAME amazonsgame.png)
+    endforeach()
+    
+    # Install .desktop file
+    install(FILES ${CMAKE_CURRENT_LIST_DIR}/AmazonsGame.desktop
+            DESTINATION share/applications)
+endif()

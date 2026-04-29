@@ -1,6 +1,12 @@
-# 👑 Game of The Amazons
+<div align="center">
 
-A strategic board game implementation featuring AI opponents with multiple difficulty levels, built with C++ and the natID framework.
+![Ruflo Banner](res/appIcon/lnxApp256.png)
+
+# Game of The Amazons
+
+
+
+**A strategic board game implementation featuring AI opponents with multiple difficulty levels, built with C++ and the natID framework.**
 
 **Academic Project** • Artificial Intelligence • Data Science and AI • ETF Sarajevo
 
@@ -9,6 +15,8 @@ A strategic board game implementation featuring AI opponents with multiple diffi
 ![natID](https://img.shields.io/badge/natID-Framework-orange)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgray)
+
+</div>
 
 ## 📋 Table of Contents
 

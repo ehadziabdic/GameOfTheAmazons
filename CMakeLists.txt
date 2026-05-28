@@ -8,12 +8,14 @@ set(SOURCE_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(HOME_ROOT $ENV{HOME})
 if (WIN32)
 	string(REPLACE "\\" "/" HOME_ROOT "${HOME_ROOT}")
+else()
+    set(HOME_ROOT $ENV{HOME})
 endif()
-set(WORK_ROOT ${HOME_ROOT}/Work)
-include(${WORK_ROOT}/DevEnv/Common.cmake) 
+set(NATID_SDK_ROOT ${HOME_ROOT}/natID.SDK)
+include(${NATID_SDK_ROOT}/DevEnv/Common.cmake)
 #END dio koji ide u sve solutions
 
-include(${WORK_ROOT}/DevEnv/natGUI.cmake)
+include(${NATID_SDK_ROOT}/DevEnv/natGUI.cmake)
 
 include(AmazonsGame.cmake)
 

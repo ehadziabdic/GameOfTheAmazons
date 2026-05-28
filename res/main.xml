@@ -18,8 +18,8 @@
 		<Res id="hard" path = ":images/hard.png"/>
 
 		<!-- Game pieces -->
-		<Res id="blackQueen" path = "Work/Common/Images/Chess/QueenBlack.png"/>
-		<Res id="whiteQueen" path = "Work/Common/Images/Chess/QueenWhite.png"/>
+		<Res id="blackQueen" path = "Common/Images/Chess/QueenBlack.png"/>
+		<Res id="whiteQueen" path = "Common/Images/Chess/QueenWhite.png"/>
 
 		<!-- Linux Icons -->
 		<Res id="lnxApp16" path=":appIcon/lnxApp16.png"/>
@@ -57,6 +57,6 @@
 	</FileNames>
 
 	<Sounds>
-		<Res id="move" path="Work/Common/Sounds/ChessCapture.wav"/>
+		<Res id="move" path="Common/Sounds/ChessCapture.wav"/>
 	</Sounds>
 </DevRes>

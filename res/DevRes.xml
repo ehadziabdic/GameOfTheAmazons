@@ -1,5 +1,5 @@
 <?xml version='1.0'?>
-<DevRes version="2024.08.12" regionals="Work/Common/Regionals">
+<DevRes version="2024.08.12" regionals="Common/Regionals">
 	<Langs>
 		<Lang id="EN" name="English"/>
 		<Lang id="BA" name="Bosanski"/>
@@ -10,11 +10,11 @@
 
 	</Langs>
 	<ArtWork>
-		<Config path="Work/Common/ResConfigs/natGUI.xml"/>
+		<Config path="Common/ResConfigs/natGUI.xml"/>
 		<Config path=":main.xml"/>
 	</ArtWork>
 	<Translation>
-		<Config path="Work/Common/ResConfigs/tr/%s/natGUI.xml"/>
+		<Config path="Common/ResConfigs/tr/%s/natGUI.xml"/>
 		<Config path=":tr/main_%s.xml"/>
 	</Translation>
 </DevRes>

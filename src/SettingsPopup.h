@@ -119,10 +119,10 @@ inline SettingsPopup::SettingsPopup()
     _cpDarkTile.setValue(darkColor);
     
     // Initially hide color pickers
-    _lblLightTile.hide(false, true);
-    _cpLightTile.hide(false, true);
-    _lblDarkTile.hide(false, true);
-    _cpDarkTile.hide(false, true);
+    static_cast<gui::Frame&>(_lblLightTile).hide(true);
+    static_cast<gui::Frame&>(_cpLightTile).hide(true);
+    static_cast<gui::Frame&>(_lblDarkTile).hide(true);
+    static_cast<gui::Frame&>(_cpDarkTile).hide(true);
     
     _cmbLanguages.onChangedSelection([this]() { handleSelectionChanged(); });
     _cmbBoardSizes.onChangedSelection([this]() {
@@ -165,10 +165,10 @@ inline SettingsPopup::SettingsPopup()
     // Handle custom theme checkbox
     _chkCustomTheme.onClick([this]() {
         bool useCustom = _chkCustomTheme.isChecked();
-        _lblLightTile.hide(!useCustom, true);
-        _cpLightTile.hide(!useCustom, true);
-        _lblDarkTile.hide(!useCustom, true);
-        _cpDarkTile.hide(!useCustom, true);
+        static_cast<gui::Frame&>(_lblLightTile).hide(useCustom);
+        static_cast<gui::Frame&>(_cpLightTile).hide(useCustom);
+        static_cast<gui::Frame&>(_lblDarkTile).hide(useCustom);
+        static_cast<gui::Frame&>(_cpDarkTile).hide(useCustom);
         
         if (useCustom && _boardStyleChangedHandler && !_suppressSettingsSignals) {
             _boardStyleChangedHandler(BoardStyle::CustomTheme);
@@ -287,10 +287,10 @@ inline void SettingsPopup::syncSelections(BoardDimension board, Difficulty diffi
     // Update custom theme checkbox and color picker visibility
     bool isCustom = (style == BoardStyle::CustomTheme);
     _chkCustomTheme.setChecked(isCustom);
-    _lblLightTile.hide(!isCustom, true);
-    _cpLightTile.hide(!isCustom, true);
-    _lblDarkTile.hide(!isCustom, true);
-    _cpDarkTile.hide(!isCustom, true);
+    static_cast<gui::Frame&>(_lblLightTile).hide(isCustom);
+    static_cast<gui::Frame&>(_cpLightTile).hide(isCustom);
+    static_cast<gui::Frame&>(_lblDarkTile).hide(isCustom);
+    static_cast<gui::Frame&>(_cpDarkTile).hide(isCustom);
     
     // Select the appropriate combo item (ignore CustomTheme as it's not in the list)
     if (!isCustom) {

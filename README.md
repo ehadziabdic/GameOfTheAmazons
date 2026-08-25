@@ -15,6 +15,7 @@
 ![natID](https://img.shields.io/badge/natID-Framework-orange)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgray)
+[![Build All Installers](https://github.com/ehadziabdic/GameOfTheAmazons/actions/workflows/release-all.yml/badge.svg)](https://github.com/ehadziabdic/GameOfTheAmazons/actions/workflows/release-all.yml)
 
 </div>
 
@@ -132,12 +133,30 @@ Before installing, ensure you have the following:
 
 ## 📥 Installation
 
-### 1. Install natID Framework
+### Option A — Download a Ready-Made Installer (Recommended for Players)
+
+Grab an installer for your platform from the
+[**Releases**](https://github.com/ehadziabdic/GameOfTheAmazons/releases) page —
+no build tools or natID SDK required:
+
+| Platform | Download | How to install |
+|----------|----------|----------------|
+| 🪟 **Windows 10/11** | `GameOfTheAmazons-win.zip` | Unzip, run `Install_Game of The Amazons.exe` (or the `.msi` directly). Keep both files in the same folder. |
+| 🍎 **macOS Apple Silicon** (M1–M4) | `GameOfTheAmazons-macOS-Silicon.zip` | Unzip, drag `GameOfTheAmazons.app` to Applications. First launch: right-click → **Open** → **Open** (unsigned app). |
+| 🍎 **macOS Intel** (2016–2020 Macs) | `GameOfTheAmazons-macOS-Intel.zip` | Same as above. |
+| 🐧 **Linux** (Ubuntu 24.04+) | `GameOfTheAmazons-linux.zip` | Unzip, then `sudo apt install ./AmazonsGame*.deb` (installs via your package manager with all dependencies). |
+
+All installers are built automatically by CI on every release tag
+([build status](https://github.com/ehadziabdic/GameOfTheAmazons/actions/workflows/release-all.yml)).
+
+### Option B — Build from Source (for Developers)
+
+#### 1. Install natID Framework
 
 Follow the natID installation instructions from its repository:
 [https://github.com/idzafic/natID.git](https://github.com/idzafic/natID.git)
 
-### 2. Clone the Repository
+#### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/ehadziabdic/GameOfTheAmazons.git
@@ -145,7 +164,7 @@ git clone https://github.com/ehadziabdic/GameOfTheAmazons.git
 
 Move it into the `$HOME/Work/CPProjects` directory.
 
-### 3. Create Build Directory
+#### 3. Create Build Directory
 
 ```bash
 mkdir build
@@ -175,6 +194,11 @@ After successful compilation, the executable will be located in:
 - Windows: `build/AmazonsGame.exe`
 - macOS: `build/AmazonsGame.app`
 - Linux: `build/AmazonsGame`
+
+> **Note:** The natID SDK routes build output to the RAM disk (`$HOME/natID.RAMDisk/Out/`)
+> when configured through its DevEnv — see
+> [docs/INSTALLER_PIPELINE_GUIDE.md](docs/INSTALLER_PIPELINE_GUIDE.md) for details,
+> including how the cross-platform installers are built automatically via GitHub Actions.
 
 ## 🚀 Usage
 

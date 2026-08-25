@@ -54,10 +54,15 @@ jobs:
           $HOME/natID/natID.Utils/macOS/arm64/SetupCollector \
             $HOME/Setups/AmazonsGame.xml
 
+      - name: Stage installer output
+        run: |
+          mkdir -p ${{ github.workspace }}/installer-output
+          cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/
+          ls -laR ${{ github.workspace }}/installer-output/
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: AmazonsGame-macOS
-          path: |
-            ~/natID.RAMDisk/Setup/AmazonsGame/*
+          path: installer-output/*
           if-no-files-found: error

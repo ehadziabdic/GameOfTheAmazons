@@ -39,7 +39,7 @@ jobs:
       - name: Verify executable exists
         run: |
           ls -la $HOME/natID.RAMDisk/Out/AmazonsGame/Release/
-          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame.app/Contents/MacOS/AmazonsGame
 
       - name: Collect installer (SetupCollector)
         run: |

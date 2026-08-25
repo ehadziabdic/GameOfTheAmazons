@@ -1,0 +1,45 @@
+name: macOS Installer
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install natID SDK
+        run: git clone --depth 1 https://github.com/idzafic/natID.git $HOME/natID
+
+      - name: Place project where the collector config expects it
+        run: |
+          mkdir -p ~/Desktop
+          ln -s "$GITHUB_WORKSPACE" ~/Desktop/GameOfTheAmazons
+
+      - name: Configure and build (Release)
+        run: |
+          cmake -S . -B $HOME/natID.RAMDisk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build $HOME/natID.RAMDisk/build -j
+
+      - name: Verify executable exists
+        run: |
+          ls -la $HOME/natID.RAMDisk/Out/AmazonsGame/Release/
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame
+
+      - name: Collect installer (SetupCollector)
+        run: |
+          chmod +x $HOME/natID/natID.Utils/macOS/arm64/SetupCollector
+          $HOME/natID/natID.Utils/macOS/arm64/SetupCollector \
+            ${{ github.workspace }}/packaging/AmazonsGame.xml
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmazonsGame-macOS
+          path: |
+            ~/natID.RAMDisk/Setup/AmazonsGame/*
+          if-no-files-found: error

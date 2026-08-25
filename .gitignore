@@ -21,7 +21,6 @@ build/
 out/
 
 # Github stuff
-.github/
 .git/
 
 # Keep this file tracked

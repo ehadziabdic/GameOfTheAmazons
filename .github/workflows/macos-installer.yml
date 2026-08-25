@@ -23,7 +23,7 @@ jobs:
           brew install sevenzip
           curl -L -o /tmp/sdk-bin.7z \
             https://github.com/idzafic/natID/releases/download/v4.2.1/bin_macOS_arm64_20260710.7z
-          7z x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          7zz x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
           ls -la $HOME/natID.SDK/bin/lib/
 
       - name: Place project where the collector config expects it

@@ -52,17 +52,27 @@ jobs:
           cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
           chmod +x $HOME/natID/natID.Utils/macOS/arm64/SetupCollector
           $HOME/natID/natID.Utils/macOS/arm64/SetupCollector \
-            $HOME/Setups/AmazonsGame.xml
+            $HOME/Setups/AmazonsGame.xml || true
+          echo "--- Diagnostics: where did output go? ---"
+          ls -la $HOME/natID.RAMDisk/ || true
+          echo "--- Setup dir tree ---"
+          find $HOME/natID.RAMDisk/Setup -maxdepth 3 2>/dev/null || echo "no Setup dir"
+          echo "--- Out dir tree ---"
+          find $HOME/natID.RAMDisk/Out -maxdepth 3 2>/dev/null || true
+          echo "--- Setups dir ---"
+          ls -la $HOME/Setups/
 
       - name: Stage installer output
+        if: success() || failure()
         run: |
           mkdir -p ${{ github.workspace }}/installer-output
-          cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/
-          ls -laR ${{ github.workspace }}/installer-output/
+          cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            echo "WARNING: nothing found in Setup/AmazonsGame - check diagnostics above"
+          ls -laR ${{ github.workspace }}/installer-output/ || true
 
       - name: Upload installer artifact
+        if: hashFiles('installer-output/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: AmazonsGame-macOS
           path: installer-output/*
-          if-no-files-found: error

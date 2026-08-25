@@ -18,6 +18,13 @@ jobs:
           # The project's CMakeLists expects $HOME/natID.SDK and $HOME/natID.Utils
           ln -s $HOME/natID/natID.SDK $HOME/natID.SDK
           ln -s $HOME/natID/natID.Utils $HOME/natID.Utils
+          # The repo does not ship prebuilt libs - download them from Releases
+          # (per natID.SDK/bin/ReadMe.txt: extract bin_<platform> archive into bin/)
+          brew install sevenzip
+          curl -L -o /tmp/sdk-bin.7z \
+            https://github.com/idzafic/natID/releases/download/v4.2.1/bin_macOS_arm64_20260710.7z
+          7z x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          ls -la $HOME/natID.SDK/bin/lib/
 
       - name: Place project where the collector config expects it
         run: |

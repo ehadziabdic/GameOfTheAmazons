@@ -43,6 +43,9 @@ jobs:
 
       - name: Collect installer (SetupCollector)
         run: |
+          # EnvVariables.xml maps $RAMDisk to /Volumes/RAMDisk on macOS,
+          # but we built into $HOME/natID.RAMDisk - bridge the two
+          sudo ln -s $HOME/natID.RAMDisk /Volumes/RAMDisk
           chmod +x $HOME/natID/natID.Utils/macOS/arm64/SetupCollector
           $HOME/natID/natID.Utils/macOS/arm64/SetupCollector \
             ${{ github.workspace }}/packaging/AmazonsGame.xml

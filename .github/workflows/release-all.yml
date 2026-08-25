@@ -65,6 +65,14 @@ jobs:
           mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%
           xcopy /E /I /Y %USERPROFILE%\natID.SDK\DevEnv\SetupCollectors %USERPROFILE%\Setups
           copy packaging\AmazonsGame.xml %USERPROFILE%\Setups\
+          REM Patch GTK4.xml: SDK manifest expects old layout (GTK/release/bin,
+          REM old DLL names) - CI runner has DLLs directly in GTK/ with new names
+          powershell -NoProfile -Command ^
+            "$f='%USERPROFILE%\Setups\Packages\GTK4.xml';" ^
+            "$c=Get-Content $f -Raw;" ^
+            "$c=$c -replace '<Group type=\"dynLib\" path=\"\$MyBin/GTK/release/bin\">','<Group type=\"dynLib\" path=\"$MyBin/GTK\">';" ^
+            "$c=$c -replace 'ffi-7','ffi-8' -replace 'jpeg-8\.2\.2','jpeg62' -replace 'pkgconf-4','pkgconf-7' -replace 'png16-16','libpng16' -replace 'tiff4','tiff' -replace 'xml2-2','xml2-16' -replace '>z<','>zlib1<' -replace 'gthread-1\.0-0','gthread-2.0-0';" ^
+            "Set-Content $f $c -Encoding UTF8"
           %USERPROFILE%\natID.Utils\windows\SetupCollector.exe %USERPROFILE%\Setups\AmazonsGame.xml
           dir /s /b R:\Setup\AmazonsGame
 
@@ -72,17 +80,29 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path installer-output | Out-Null
-          # Copy exe+msi pair (skip staging folder)
-          Get-ChildItem "R:\Setup\AmazonsGame" -File | Copy-Item -Destination installer-output
+          # Only the installer pair (exe bootstrapper + msi) - skip staging folder
+          # and any loose DLLs from a failed collection
+          Get-ChildItem "R:\Setup\AmazonsGame" -File -Include *.msi, "Install*.exe" -Recurse |
+            Copy-Item -Destination installer-output
           Get-ChildItem installer-output
+          if (-not (Get-ChildItem installer-output -Filter *.msi)) {
+            Write-Error "No .msi produced - SetupCollector likely failed (check log above)"
+            exit 1
+          }
+
+      - name: Zip installer pair
+        shell: pwsh
+        run: |
+          Compress-Archive -Path installer-output/* -DestinationPath GameOfTheAmazons-win.zip
+          Get-Item GameOfTheAmazons-win.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AmazonsGame-windows
-          path: installer-output/*
+          name: GameOfTheAmazons-win
+          path: GameOfTheAmazons-win.zip
           if-no-files-found: error
 
-  macos:
+  macos-silicon:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,13 +149,69 @@ jobs:
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
           cd ${{ github.workspace }}/installer-output
-          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS.zip
-          ls -la GameOfTheAmazons-macOS.zip
+          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Silicon.zip
+          ls -la GameOfTheAmazons-macOS-Silicon.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AmazonsGame-macOS
-          path: installer-output/GameOfTheAmazons-macOS.zip
+          name: GameOfTheAmazons-macOS-Silicon
+          path: installer-output/GameOfTheAmazons-macOS-Silicon.zip
+          if-no-files-found: error
+
+  macos-intel:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install natID SDK
+        run: |
+          git clone --depth 1 https://github.com/idzafic/natID.git $HOME/natID
+          ln -s $HOME/natID/natID.SDK $HOME/natID.SDK
+          ln -s $HOME/natID/natID.Utils $HOME/natID.Utils
+          brew install sevenzip
+          curl -L -o /tmp/sdk-bin.7z \
+            https://github.com/idzafic/natID/releases/download/v4.2.1/bin_macOS_x64_20260710.7z
+          7zz x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          ls $HOME/natID.SDK/bin/lib/
+
+      - name: Place project where the collector config expects it
+        run: |
+          mkdir -p ~/Desktop
+          ln -s "$GITHUB_WORKSPACE" ~/Desktop/GameOfTheAmazons
+
+      - name: Build (Release)
+        run: |
+          cmake -S . -B $HOME/natID.RAMDisk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build $HOME/natID.RAMDisk/build -j
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame.app/Contents/MacOS/AmazonsGame
+
+      - name: Collect installer (SetupCollector)
+        run: |
+          sudo ln -s $HOME/natID.RAMDisk /Volumes/RAMDisk
+          cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
+          cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
+          chmod +x $HOME/natID/natID.Utils/macOS/x64/SetupCollector
+          $HOME/natID/natID.Utils/macOS/x64/SetupCollector $HOME/Setups/AmazonsGame.xml
+          find $HOME/natID.RAMDisk/Setup -maxdepth 4
+
+      - name: Stage installer output
+        run: |
+          mkdir -p ${{ github.workspace }}/installer-output
+          cp -R $HOME/natID.RAMDisk/Setup/ALL_Bundles/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            echo "WARNING: no installer output found"
+          ls -laR ${{ github.workspace }}/installer-output/
+
+      - name: Create distributable zip (ditto preserves exec permissions)
+        run: |
+          cd ${{ github.workspace }}/installer-output
+          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Intel.zip
+          ls -la GameOfTheAmazons-macOS-Intel.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameOfTheAmazons-macOS-Intel
+          path: installer-output/GameOfTheAmazons-macOS-Intel.zip
           if-no-files-found: error
 
   linux:
@@ -194,14 +270,20 @@ jobs:
           find $HOME/natID.RAMDisk/Setup -maxdepth 2 -type f ! -name "*.txt" -exec cp {} ${{ github.workspace }}/installer-output/ \; 2>/dev/null || true
           ls -la ${{ github.workspace }}/installer-output/
 
+      - name: Zip deb package
+        run: |
+          cd ${{ github.workspace }}
+          zip -j GameOfTheAmazons-linux.zip installer-output/*
+          ls -la GameOfTheAmazons-linux.zip
+
       - uses: actions/upload-artifact@v4
         with:
-          name: AmazonsGame-linux
-          path: installer-output/*
+          name: GameOfTheAmazons-linux
+          path: GameOfTheAmazons-linux.zip
           if-no-files-found: error
 
   release:
-    needs: [windows, macos, linux]
+    needs: [windows, macos-silicon, macos-intel, linux]
     runs-on: ubuntu-latest
     if: >-
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
@@ -234,15 +316,17 @@ jobs:
 
             | Platform | File |
             |----------|------|
-            | 🪟 Windows | `Install_Game of The Amazons.exe` + `Game of The Amazons.msi` (keep both together) |
-            | 🍎 macOS (Apple Silicon) | `GameOfTheAmazons-macOS.zip` |
-            | 🐧 Linux (Ubuntu 24.04+) | `*.deb` |
+            | 🪟 Windows | `GameOfTheAmazons-win.zip` (contains installer .exe + .msi - keep both together) |
+            | 🍎 macOS Apple Silicon | `GameOfTheAmazons-macOS-Silicon.zip` (M1/M2/M3/M4) |
+            | 🍎 macOS Intel | `GameOfTheAmazons-macOS-Intel.zip` (2016-2020 Intel Macs) |
+            | 🐧 Linux (Ubuntu 24.04+) | `GameOfTheAmazons-linux.zip` (contains .deb) |
 
             ### Install notes
-            - **Windows**: run the .exe (or the .msi directly)
+            - **Windows**: unzip, run the .exe (or the .msi directly)
             - **macOS**: unzip, drag to Applications, first launch: right-click → Open
-            - **Linux**: `sudo apt install ./AmazonsGame*.deb`
+            - **Linux**: unzip, `sudo apt install ./AmazonsGame*.deb`
           files: |
-            artifacts/AmazonsGame-windows/*
-            artifacts/AmazonsGame-macOS/*
-            artifacts/AmazonsGame-linux/*
+            artifacts/GameOfTheAmazons-win/*
+            artifacts/GameOfTheAmazons-macOS-Silicon/*
+            artifacts/GameOfTheAmazons-macOS-Intel/*
+            artifacts/GameOfTheAmazons-linux/*

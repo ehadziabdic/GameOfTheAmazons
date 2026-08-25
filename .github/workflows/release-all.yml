@@ -65,10 +65,9 @@ jobs:
           $f = "$env:USERPROFILE\Setups\Packages\GTK4.xml"
           $c = Get-Content $f -Raw
           $c = $c.Replace('GTK/release/bin', 'GTK')
-          $c = $c.Replace('ffi-7', 'ffi-8').Replace('jpeg-8.2.2', 'jpeg62')`
-                 .Replace('pkgconf-4', 'pkgconf-7').Replace('png16-16', 'libpng16')`
-                 .Replace('tiff4', 'tiff').Replace('xml2-2', 'xml2-16')`
-                 .Replace('>z<', '>zlib1<').Replace('gthread-1.0-0', 'gthread-2.0-0')
+          $c = $c.Replace('ffi-7', 'ffi-8').Replace('jpeg-8.2.2', 'jpeg62').Replace('pkgconf-4', 'pkgconf-7')
+          $c = $c.Replace('png16-16', 'libpng16').Replace('tiff4', 'tiff').Replace('xml2-2', 'xml2-16')
+          $c = $c.Replace('>z<', '>zlib1<').Replace('gthread-1.0-0', 'gthread-2.0-0')
           Set-Content $f $c -Encoding UTF8
           Write-Host "--- Patched GTK4.xml Group paths: ---"
           Select-String -Path $f -Pattern 'Group type' | ForEach-Object { $_.Line.Trim() }

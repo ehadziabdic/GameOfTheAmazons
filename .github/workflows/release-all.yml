@@ -56,6 +56,23 @@ jobs:
           cmake --build %USERPROFILE%\natID.RAMDisk\build --config Release
           dir R:\Out\AmazonsGame\Release
 
+      - name: Patch GTK4.xml for current SDK layout
+        shell: pwsh
+        run: |
+          # SDK manifest expects old layout (GTK/release/bin + old DLL names).
+          # Runner has DLLs directly in GTK/ with new names. Replace the path
+          # substring (layout-independent) and rename changed DLLs.
+          $f = "$env:USERPROFILE\Setups\Packages\GTK4.xml"
+          $c = Get-Content $f -Raw
+          $c = $c.Replace('GTK/release/bin', 'GTK')
+          $c = $c.Replace('ffi-7', 'ffi-8').Replace('jpeg-8.2.2', 'jpeg62')`
+                 .Replace('pkgconf-4', 'pkgconf-7').Replace('png16-16', 'libpng16')`
+                 .Replace('tiff4', 'tiff').Replace('xml2-2', 'xml2-16')`
+                 .Replace('>z<', '>zlib1<').Replace('gthread-1.0-0', 'gthread-2.0-0')
+          Set-Content $f $c -Encoding UTF8
+          Write-Host "--- Patched GTK4.xml Group paths: ---"
+          Select-String -Path $f -Pattern 'Group type' | ForEach-Object { $_.Line.Trim() }
+
       - name: Collect installer (SetupCollector)
         shell: cmd
         run: |
@@ -65,14 +82,6 @@ jobs:
           mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%
           xcopy /E /I /Y %USERPROFILE%\natID.SDK\DevEnv\SetupCollectors %USERPROFILE%\Setups
           copy packaging\AmazonsGame.xml %USERPROFILE%\Setups\
-          REM Patch GTK4.xml: SDK manifest expects old layout (GTK/release/bin,
-          REM old DLL names) - CI runner has DLLs directly in GTK/ with new names
-          powershell -NoProfile -Command ^
-            "$f='%USERPROFILE%\Setups\Packages\GTK4.xml';" ^
-            "$c=Get-Content $f -Raw;" ^
-            "$c=$c -replace '<Group type=\"dynLib\" path=\"\$MyBin/GTK/release/bin\">','<Group type=\"dynLib\" path=\"$MyBin/GTK\">';" ^
-            "$c=$c -replace 'ffi-7','ffi-8' -replace 'jpeg-8\.2\.2','jpeg62' -replace 'pkgconf-4','pkgconf-7' -replace 'png16-16','libpng16' -replace 'tiff4','tiff' -replace 'xml2-2','xml2-16' -replace '>z<','>zlib1<' -replace 'gthread-1\.0-0','gthread-2.0-0';" ^
-            "Set-Content $f $c -Encoding UTF8"
           %USERPROFILE%\natID.Utils\windows\SetupCollector.exe %USERPROFILE%\Setups\AmazonsGame.xml
           dir /s /b R:\Setup\AmazonsGame
 

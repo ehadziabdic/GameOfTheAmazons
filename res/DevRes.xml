@@ -1,5 +1,13 @@
 <?xml version='1.0'?>
-<DevRes version="2024.08.12" regionals="Common/Regionals">
+<DevRes regionals="Common/Regionals"
+        displayName="Game of The Amazons"
+        maintainer="EH MP AM"
+        email="ehadziabdi1@etf.unsa.ba"
+        homePage="https://github.com/ehadziabdic/GameOfTheAmazons"
+        majorVersion="1"
+        minorVersion="0"
+        versionDate="2026-08-25"
+        comment="Strategic board game with AI opponent (Minimax + alpha-beta pruning). DSAI project, ETF Sarajevo.">
 	<Langs>
 		<Lang id="EN" name="English"/>
 		<Lang id="BA" name="Bosanski"/>

@@ -46,9 +46,13 @@ jobs:
           # EnvVariables.xml maps $RAMDisk to /Volumes/RAMDisk on macOS,
           # but we built into $HOME/natID.RAMDisk - bridge the two
           sudo ln -s $HOME/natID.RAMDisk /Volumes/RAMDisk
+          # SetupCollector needs EnvVariables.xml + Packages/ next to the config:
+          # assemble a working dir from the SDK's SetupCollectors + our config
+          cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
+          cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
           chmod +x $HOME/natID/natID.Utils/macOS/arm64/SetupCollector
           $HOME/natID/natID.Utils/macOS/arm64/SetupCollector \
-            ${{ github.workspace }}/packaging/AmazonsGame.xml
+            $HOME/Setups/AmazonsGame.xml
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

@@ -66,9 +66,15 @@ jobs:
             echo "WARNING: no installer output found"
           ls -laR ${{ github.workspace }}/installer-output/
 
+      - name: Create distributable zip (ditto preserves exec permissions)
+        run: |
+          cd ${{ github.workspace }}/installer-output
+          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS.zip
+          ls -la GameOfTheAmazons-macOS.zip
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: AmazonsGame-macOS
-          path: installer-output/*
+          path: installer-output/GameOfTheAmazons-macOS.zip
           if-no-files-found: error

@@ -56,6 +56,9 @@ jobs:
         shell: cmd
         run: |
           set HOME=%USERPROFILE%
+          REM Collector config expects project at ~Desktop/GameOfTheAmazons
+          if not exist %USERPROFILE%\Desktop mkdir %USERPROFILE%\Desktop
+          mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%
           xcopy /E /I /Y %USERPROFILE%\natID.SDK\DevEnv\SetupCollectors %USERPROFILE%\Setups
           copy packaging\AmazonsGame.xml %USERPROFILE%\Setups\
           %USERPROFILE%\natID.Utils\windows\SetupCollector.exe %USERPROFILE%\Setups\AmazonsGame.xml
@@ -166,9 +169,11 @@ jobs:
 
       - name: Collect installer (SetupCollector)
         run: |
-          # EnvVariables.xml maps $RAMDisk to /media/RAMDisk on Linux
-          sudo mkdir -p /media/RAMDisk
-          sudo ln -sfn $HOME/natID.RAMDisk /media/RAMDisk
+          # EnvVariables.xml maps $RAMDisk to /media/RAMDisk on Linux.
+          # /media/RAMDisk must BE the symlink, not a dir containing it.
+          sudo rm -rf /media/RAMDisk
+          sudo ln -s $HOME/natID.RAMDisk /media/RAMDisk
+          ls -la /media/RAMDisk/Out/AmazonsGame/Release/
           cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
           cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
           chmod +x $HOME/natID/natID.Utils/linux/SetupCollector

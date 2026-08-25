@@ -56,12 +56,19 @@ jobs:
           cmake --build %USERPROFILE%\natID.RAMDisk\build --config Release
           dir R:\Out\AmazonsGame\Release
 
-      - name: Patch GTK4.xml for current SDK layout
+      - name: Collect installer (SetupCollector)
         shell: pwsh
         run: |
-          # SDK manifest expects old layout (GTK/release/bin + old DLL names).
-          # Runner has DLLs directly in GTK/ with new names. Replace the path
-          # substring (layout-independent) and rename changed DLLs.
+          $env:HOME = $env:USERPROFILE
+          # Collector config expects project at ~Desktop/GameOfTheAmazons
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\Desktop" | Out-Null
+          cmd /c "mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%"
+          # Copy SDK collector configs (EnvVariables.xml + Packages/) and add ours
+          Copy-Item "$env:USERPROFILE\natID.SDK\DevEnv\SetupCollectors" "$env:USERPROFILE\Setups" -Recurse -Force
+          Copy-Item "packaging/AmazonsGame.xml" "$env:USERPROFILE\Setups\"
+
+          # Patch GTK4.xml: SDK manifest expects old layout (GTK/release/bin +
+          # old DLL names); runner has DLLs directly in GTK/ with new names
           $f = "$env:USERPROFILE\Setups\Packages\GTK4.xml"
           $c = Get-Content $f -Raw
           $c = $c.Replace('GTK/release/bin', 'GTK')
@@ -72,17 +79,9 @@ jobs:
           Write-Host "--- Patched GTK4.xml Group paths: ---"
           Select-String -Path $f -Pattern 'Group type' | ForEach-Object { $_.Line.Trim() }
 
-      - name: Collect installer (SetupCollector)
-        shell: cmd
-        run: |
-          set HOME=%USERPROFILE%
-          REM Collector config expects project at ~Desktop/GameOfTheAmazons
-          if not exist %USERPROFILE%\Desktop mkdir %USERPROFILE%\Desktop
-          mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%
-          xcopy /E /I /Y %USERPROFILE%\natID.SDK\DevEnv\SetupCollectors %USERPROFILE%\Setups
-          copy packaging\AmazonsGame.xml %USERPROFILE%\Setups\
-          %USERPROFILE%\natID.Utils\windows\SetupCollector.exe %USERPROFILE%\Setups\AmazonsGame.xml
-          dir /s /b R:\Setup\AmazonsGame
+          & "$env:USERPROFILE\natID.Utils\windows\SetupCollector.exe" "$env:USERPROFILE\Setups\AmazonsGame.xml"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmd /c "dir /s /b R:\Setup\AmazonsGame"
 
       - name: Stage installer output
         shell: pwsh

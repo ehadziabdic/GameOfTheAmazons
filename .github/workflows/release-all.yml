@@ -43,7 +43,10 @@ jobs:
       - name: Build (Release)
         shell: cmd
         run: |
+          REM Project CMakeLists reads $ENV{HOME} - not set by default on Windows runners
+          set HOME=%USERPROFILE%
           REM Bridge RAMDisk: EnvVariables.xml maps $RAMDisk to R: on Windows
+          if not exist %USERPROFILE%\natID.RAMDisk mkdir %USERPROFILE%\natID.RAMDisk
           if not exist R:\ subst R: %USERPROFILE%\natID.RAMDisk
           cmake -S . -B %USERPROFILE%\natID.RAMDisk\build
           cmake --build %USERPROFILE%\natID.RAMDisk\build --config Release
@@ -52,6 +55,7 @@ jobs:
       - name: Collect installer (SetupCollector)
         shell: cmd
         run: |
+          set HOME=%USERPROFILE%
           xcopy /E /I /Y %USERPROFILE%\natID.SDK\DevEnv\SetupCollectors %USERPROFILE%\Setups
           copy packaging\AmazonsGame.xml %USERPROFILE%\Setups\
           %USERPROFILE%\natID.Utils\windows\SetupCollector.exe %USERPROFILE%\Setups\AmazonsGame.xml
@@ -164,20 +168,21 @@ jobs:
         run: |
           # EnvVariables.xml maps $RAMDisk to /media/RAMDisk on Linux
           sudo mkdir -p /media/RAMDisk
-          sudo ln -s $HOME/natID.RAMDisk/* /media/RAMDisk/ 2>/dev/null || \
-            sudo ln -s $HOME/natID.RAMDisk /media/RAMDisk
+          sudo ln -sfn $HOME/natID.RAMDisk /media/RAMDisk
           cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
           cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
           chmod +x $HOME/natID/natID.Utils/linux/SetupCollector
-          $HOME/natID/natID.Utils/linux/SetupCollector $HOME/Setups/AmazonsGame.xml || true
+          $HOME/natID/natID.Utils/linux/SetupCollector $HOME/Setups/AmazonsGame.xml
           echo "--- Setup output tree ---"
           find $HOME/natID.RAMDisk/Setup -maxdepth 4 2>/dev/null || echo "no Setup dir"
 
       - name: Stage installer output
         run: |
           mkdir -p ${{ github.workspace }}/installer-output
-          # .deb package(s) - copy whatever was produced
+          # .deb package(s) - search the whole Setup tree
           find $HOME/natID.RAMDisk/Setup -name "*.deb" -exec cp {} ${{ github.workspace }}/installer-output/ \; || true
+          # Fallback: also check ALL_Bundles-style output
+          find $HOME/natID.RAMDisk/Setup -maxdepth 2 -type f ! -name "*.txt" -exec cp {} ${{ github.workspace }}/installer-output/ \; 2>/dev/null || true
           ls -la ${{ github.workspace }}/installer-output/
 
       - uses: actions/upload-artifact@v4

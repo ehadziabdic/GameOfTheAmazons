@@ -83,8 +83,10 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path installer-output | Out-Null
           # Only the installer pair (exe bootstrapper + msi) - skip staging folder
-          # and any loose DLLs from a failed collection
-          Get-ChildItem "R:\Setup\AmazonsGame" -File -Include *.msi, "Install*.exe" -Recurse |
+          # and any loose DLLs from a failed collection.
+          # NOTE: SetupCollector writes the final .msi/.exe pair to R:\Setup\
+          # (the parent of the staging folder), so search the whole Setup tree.
+          Get-ChildItem "R:\Setup" -File -Recurse -Include *.msi, "Install*.exe" |
             Copy-Item -Destination installer-output
           Get-ChildItem installer-output
           if (-not (Get-ChildItem installer-output -Filter *.msi)) {

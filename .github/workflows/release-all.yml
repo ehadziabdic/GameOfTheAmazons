@@ -158,6 +158,9 @@ jobs:
           codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
           # Remove quarantine extended attributes that Gatekeeper checks
           xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify quarantine is cleared (should show no output)
+          echo "=== xattr on .app after clearing ==="
+          xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
 
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
@@ -165,6 +168,9 @@ jobs:
           ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Silicon.zip
           # Clear quarantine from the zip itself
           xattr -c GameOfTheAmazons-macOS-Silicon.zip
+          # Verify zip has no quarantine
+          echo "=== xattr on zip after clearing ==="
+          xattr -l GameOfTheAmazons-macOS-Silicon.zip || echo "No extended attributes (good)"
           ls -la GameOfTheAmazons-macOS-Silicon.zip
 
       - uses: actions/upload-artifact@v4
@@ -225,6 +231,9 @@ jobs:
           codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
           # Remove quarantine extended attributes that Gatekeeper checks
           xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify quarantine is cleared (should show no output)
+          echo "=== xattr on .app after clearing ==="
+          xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
 
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
@@ -232,6 +241,9 @@ jobs:
           ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Intel.zip
           # Clear quarantine from the zip itself
           xattr -c GameOfTheAmazons-macOS-Intel.zip
+          # Verify zip has no quarantine
+          echo "=== xattr on zip after clearing ==="
+          xattr -l GameOfTheAmazons-macOS-Intel.zip || echo "No extended attributes (good)"
           ls -la GameOfTheAmazons-macOS-Intel.zip
 
       - uses: actions/upload-artifact@v4
@@ -349,10 +361,14 @@ jobs:
 
             ### Install notes
             - **Windows**: unzip, run the .exe (or the .msi directly)
-            - **macOS**: unzip, drag to Applications, first launch: right-click → Open
-              - If macOS says "damaged or incomplete": open **Terminal** and run:
-                `xattr -cr /Applications/GameOfTheAmazons.app`
-                then launch normally.
+            - **macOS**: unzip, drag `GameOfTheAmazons.app` to Applications
+              - **⚠️ IMPORTANT**: Safari auto-extracts zips on download. This re-applies the macOS quarantine flag.
+              - **After downloading and moving to Applications, you MUST run this in Terminal:**
+                ```bash
+                xattr -cr /Applications/GameOfTheAmazons.app
+                ```
+                (No output = success. Then launch normally.)
+              - If you see "damaged or incomplete", the quarantine flag wasn't cleared — run the command above.
             - **Linux**: unzip, `sudo apt install ./AmazonsGame*.deb`
           files: |
             artifacts/GameOfTheAmazons-win/*

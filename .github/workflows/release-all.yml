@@ -150,10 +150,21 @@ jobs:
             echo "WARNING: no installer output found"
           ls -laR ${{ github.workspace }}/installer-output/
 
+      - name: Re-sign app and clear quarantine flags
+        run: |
+          # Re-sign with ad-hoc signature (required for unsigned distribution)
+          codesign --force --deep --sign - "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify the signature
+          codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
+          # Remove quarantine extended attributes that Gatekeeper checks
+          xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
           cd ${{ github.workspace }}/installer-output
           ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Silicon.zip
+          # Clear quarantine from the zip itself
+          xattr -c GameOfTheAmazons-macOS-Silicon.zip
           ls -la GameOfTheAmazons-macOS-Silicon.zip
 
       - uses: actions/upload-artifact@v4
@@ -206,10 +217,21 @@ jobs:
             echo "WARNING: no installer output found"
           ls -laR ${{ github.workspace }}/installer-output/
 
+      - name: Re-sign app and clear quarantine flags
+        run: |
+          # Re-sign with ad-hoc signature (required for unsigned distribution)
+          codesign --force --deep --sign - "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify the signature
+          codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
+          # Remove quarantine extended attributes that Gatekeeper checks
+          xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
           cd ${{ github.workspace }}/installer-output
           ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Intel.zip
+          # Clear quarantine from the zip itself
+          xattr -c GameOfTheAmazons-macOS-Intel.zip
           ls -la GameOfTheAmazons-macOS-Intel.zip
 
       - uses: actions/upload-artifact@v4
@@ -328,6 +350,9 @@ jobs:
             ### Install notes
             - **Windows**: unzip, run the .exe (or the .msi directly)
             - **macOS**: unzip, drag to Applications, first launch: right-click → Open
+              - If macOS says "damaged or incomplete": open **Terminal** and run:
+                `xattr -cr /Applications/GameOfTheAmazons.app`
+                then launch normally.
             - **Linux**: unzip, `sudo apt install ./AmazonsGame*.deb`
           files: |
             artifacts/GameOfTheAmazons-win/*

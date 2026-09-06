@@ -142,7 +142,7 @@ no build tools or natID SDK required:
 | Platform | Download | How to install |
 |----------|----------|----------------|
 | 🪟 **Windows 10/11** | `GameOfTheAmazons-win.zip` | Unzip, run `Install_Game of The Amazons.exe` (or the `.msi` directly). Keep both files in the same folder. |
-| 🍎 **macOS Apple Silicon** (M1–M4) | `GameOfTheAmazons-macOS-Silicon.zip` | Unzip, drag `GameOfTheAmazons.app` to Applications. First launch: right-click → **Open** → **Open** (unsigned app). |
+| 🍎 **macOS Apple Silicon** (M1–M4) | `GameOfTheAmazons-macOS-Silicon.zip` | Unzip, drag `GameOfTheAmazons.app` to Applications. First launch: right-click → **Open** → **Open** (unsigned app). If macOS says "damaged or incomplete", open Terminal and run `xattr -cr /Applications/GameOfTheAmazons.app` then launch normally. |
 | 🍎 **macOS Intel** (2016–2020 Macs) | `GameOfTheAmazons-macOS-Intel.zip` | Same as above. |
 | 🐧 **Linux** (Ubuntu 24.04+) | `GameOfTheAmazons-linux.zip` | Unzip, then `sudo apt install ./AmazonsGame*.deb` (installs via your package manager with all dependencies). |
 

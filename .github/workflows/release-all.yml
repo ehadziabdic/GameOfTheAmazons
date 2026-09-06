@@ -161,6 +161,11 @@ jobs:
           # Verify quarantine is cleared (should show no output)
           echo "=== xattr on .app after clearing ==="
           xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
+          # Verify app bundle structure
+          echo "=== App bundle structure ==="
+          ls -la "${{ github.workspace }}/installer-output/GameOfTheAmazons.app/Contents/MacOS/"
+          # Verify executable is signed
+          codesign -dv "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" 2>&1 | head -20
 
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |
@@ -234,6 +239,11 @@ jobs:
           # Verify quarantine is cleared (should show no output)
           echo "=== xattr on .app after clearing ==="
           xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
+          # Verify app bundle structure
+          echo "=== App bundle structure ==="
+          ls -la "${{ github.workspace }}/installer-output/GameOfTheAmazons.app/Contents/MacOS/"
+          # Verify executable is signed
+          codesign -dv "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" 2>&1 | head -20
 
       - name: Create distributable zip (ditto preserves exec permissions)
         run: |

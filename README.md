@@ -1,6 +1,6 @@
 <div align="center">
 
-![Ruflo Banner](res/appIcon/lnxApp256.png)
+![Ruflo Banner](Implementation/res/appIcon/lnxApp256.png)
 
 # Game of The Amazons
 

@@ -15,7 +15,6 @@
 ![natID](https://img.shields.io/badge/natID-Framework-orange)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgray)
-[![Build All Installers](https://github.com/ehadziabdic/GameOfTheAmazons/actions/workflows/release-all.yml/badge.svg)](https://github.com/ehadziabdic/GameOfTheAmazons/actions/workflows/release-all.yml)
 
 </div>
 

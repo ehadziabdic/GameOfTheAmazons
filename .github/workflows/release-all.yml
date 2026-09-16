@@ -1,0 +1,387 @@
+name: Build All Installers
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish to GitHub Releases (yes/no)"
+        required: false
+        default: "no"
+      release_tag:
+        description: "Tag name for the Release (required if publishing, e.g. v1.0.0)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install natID SDK
+        shell: cmd
+        run: |
+          git clone --depth 1 https://github.com/idzafic/natID.git %USERPROFILE%\natID
+          mklink /J %USERPROFILE%\natID.SDK %USERPROFILE%\natID\natID.SDK
+          mklink /J %USERPROFILE%\natID.Utils %USERPROFILE%\natID\natID.Utils
+          REM Download prebuilt Windows libs (per natID.SDK/bin/ReadMe.txt)
+          curl -L -o %TEMP%\sdk-bin.7z https://github.com/idzafic/natID/releases/download/v4.2.1/bin_win_x64_20260710.7z
+          tar -xf %TEMP%\sdk-bin.7z -C %USERPROFILE%\natID.SDK\bin 2>nul || echo "trying 7z"
+          dir %USERPROFILE%\natID.SDK\bin
+
+      - name: Extract SDK libs (7-Zip)
+        shell: pwsh
+        run: |
+          # tar in Windows may not handle 7z; use 7z from choco if needed
+          if (-not (Test-Path "$env:USERPROFILE\natID.SDK\bin\mainUtils.dll")) {
+            choco install 7zip -y --no-progress
+            & "C:\Program Files\7-Zip\7z.exe" x -y -o"$env:USERPROFILE\natID.SDK\bin" "$env:TEMP\sdk-bin.7z"
+          }
+          Get-ChildItem "$env:USERPROFILE\natID.SDK\bin" -Filter *.dll | Select-Object -First 5 Name
+
+      - name: Build (Release)
+        shell: cmd
+        run: |
+          REM Project CMakeLists reads $ENV{HOME} - not set by default on Windows runners
+          set HOME=%USERPROFILE%
+          REM Bridge RAMDisk: EnvVariables.xml maps $RAMDisk to R: on Windows
+          if not exist %USERPROFILE%\natID.RAMDisk mkdir %USERPROFILE%\natID.RAMDisk
+          if not exist R:\ subst R: %USERPROFILE%\natID.RAMDisk
+          cmake -S . -B %USERPROFILE%\natID.RAMDisk\build
+          cmake --build %USERPROFILE%\natID.RAMDisk\build --config Release
+          dir R:\Out\AmazonsGame\Release
+
+      - name: Collect installer (SetupCollector)
+        shell: pwsh
+        run: |
+          $env:HOME = $env:USERPROFILE
+          # Collector config expects project at ~Desktop/GameOfTheAmazons
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\Desktop" | Out-Null
+          cmd /c "mklink /J %USERPROFILE%\Desktop\GameOfTheAmazons %GITHUB_WORKSPACE%"
+          # Copy SDK collector configs (EnvVariables.xml + Packages/) and add ours
+          Copy-Item "$env:USERPROFILE\natID.SDK\DevEnv\SetupCollectors" "$env:USERPROFILE\Setups" -Recurse -Force
+          Copy-Item "packaging/AmazonsGame.xml" "$env:USERPROFILE\Setups\"
+
+          # IMPORTANT: SetupCollector loads Packages/*.xml from the SDK's own
+          # SetupCollectors folder (NOT from the config's folder) - so the
+          # patched GTK4.xml must overwrite the SDK's copy
+          Copy-Item "packaging/GTK4.xml" "$env:USERPROFILE\natID.SDK\DevEnv\SetupCollectors\Packages\GTK4.xml" -Force
+          Write-Host "--- SDK GTK4.xml Group paths after overwrite: ---"
+          Select-String -Path "$env:USERPROFILE\natID.SDK\DevEnv\SetupCollectors\Packages\GTK4.xml" -Pattern 'path="' | ForEach-Object { $_.Line.Trim() }
+
+          & "$env:USERPROFILE\natID.Utils\windows\SetupCollector.exe" "$env:USERPROFILE\Setups\AmazonsGame.xml"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmd /c "dir /s /b R:\Setup\AmazonsGame"
+
+      - name: Stage installer output
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer-output | Out-Null
+          # Only the installer pair (exe bootstrapper + msi) - skip staging folder
+          # and any loose DLLs from a failed collection.
+          # NOTE: SetupCollector writes the final .msi/.exe pair to R:\Setup\
+          # (the parent of the staging folder), so search the whole Setup tree.
+          Get-ChildItem "R:\Setup" -File -Recurse -Include *.msi, "Install*.exe" |
+            Copy-Item -Destination installer-output
+          Get-ChildItem installer-output
+          if (-not (Get-ChildItem installer-output -Filter *.msi)) {
+            Write-Error "No .msi produced - SetupCollector likely failed (check log above)"
+            exit 1
+          }
+
+      - name: Zip installer pair
+        shell: pwsh
+        run: |
+          Compress-Archive -Path installer-output/* -DestinationPath GameOfTheAmazons-win.zip
+          Get-Item GameOfTheAmazons-win.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameOfTheAmazons-win
+          path: GameOfTheAmazons-win.zip
+          if-no-files-found: error
+
+  macos-silicon:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install natID SDK
+        run: |
+          git clone --depth 1 https://github.com/idzafic/natID.git $HOME/natID
+          ln -s $HOME/natID/natID.SDK $HOME/natID.SDK
+          ln -s $HOME/natID/natID.Utils $HOME/natID.Utils
+          brew install sevenzip
+          curl -L -o /tmp/sdk-bin.7z \
+            https://github.com/idzafic/natID/releases/download/v4.2.1/bin_macOS_arm64_20260710.7z
+          7zz x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          ls $HOME/natID.SDK/bin/lib/
+
+      - name: Place project where the collector config expects it
+        run: |
+          mkdir -p ~/Desktop
+          ln -s "$GITHUB_WORKSPACE" ~/Desktop/GameOfTheAmazons
+
+      - name: Build (Release)
+        run: |
+          cmake -S . -B $HOME/natID.RAMDisk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build $HOME/natID.RAMDisk/build -j
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame.app/Contents/MacOS/AmazonsGame
+
+      - name: Collect installer (SetupCollector)
+        run: |
+          sudo ln -s $HOME/natID.RAMDisk /Volumes/RAMDisk
+          cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
+          cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
+          chmod +x $HOME/natID/natID.Utils/macOS/arm64/SetupCollector
+          $HOME/natID/natID.Utils/macOS/arm64/SetupCollector $HOME/Setups/AmazonsGame.xml
+          find $HOME/natID.RAMDisk/Setup -maxdepth 4
+
+      - name: Stage installer output
+        run: |
+          mkdir -p ${{ github.workspace }}/installer-output
+          cp -R $HOME/natID.RAMDisk/Setup/ALL_Bundles/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            echo "WARNING: no installer output found"
+          ls -laR ${{ github.workspace }}/installer-output/
+
+      - name: Re-sign app and clear quarantine flags
+        run: |
+          # Re-sign with ad-hoc signature (required for unsigned distribution)
+          codesign --force --deep --sign - "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify the signature
+          codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
+          # Remove quarantine extended attributes that Gatekeeper checks
+          xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify quarantine is cleared (should show no output)
+          echo "=== xattr on .app after clearing ==="
+          xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
+          # Verify app bundle structure
+          echo "=== App bundle structure ==="
+          ls -la "${{ github.workspace }}/installer-output/GameOfTheAmazons.app/Contents/MacOS/"
+          # Verify executable is signed
+          codesign -dv "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" 2>&1 | head -20
+
+      - name: Create distributable zip (ditto preserves exec permissions)
+        run: |
+          cd ${{ github.workspace }}/installer-output
+          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Silicon.zip
+          # Clear quarantine from the zip itself
+          xattr -c GameOfTheAmazons-macOS-Silicon.zip
+          # Verify zip has no quarantine
+          echo "=== xattr on zip after clearing ==="
+          xattr -l GameOfTheAmazons-macOS-Silicon.zip || echo "No extended attributes (good)"
+          ls -la GameOfTheAmazons-macOS-Silicon.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameOfTheAmazons-macOS-Silicon
+          path: installer-output/GameOfTheAmazons-macOS-Silicon.zip
+          if-no-files-found: error
+
+  macos-intel:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install natID SDK
+        run: |
+          git clone --depth 1 https://github.com/idzafic/natID.git $HOME/natID
+          ln -s $HOME/natID/natID.SDK $HOME/natID.SDK
+          ln -s $HOME/natID/natID.Utils $HOME/natID.Utils
+          brew install sevenzip
+          curl -L -o /tmp/sdk-bin.7z \
+            https://github.com/idzafic/natID/releases/download/v4.2.1/bin_macOS_x64_20260710.7z
+          7zz x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          ls $HOME/natID.SDK/bin/lib/
+
+      - name: Place project where the collector config expects it
+        run: |
+          mkdir -p ~/Desktop
+          ln -s "$GITHUB_WORKSPACE" ~/Desktop/GameOfTheAmazons
+
+      - name: Build (Release)
+        run: |
+          cmake -S . -B $HOME/natID.RAMDisk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build $HOME/natID.RAMDisk/build -j
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame.app/Contents/MacOS/AmazonsGame
+
+      - name: Collect installer (SetupCollector)
+        run: |
+          sudo ln -s $HOME/natID.RAMDisk /Volumes/RAMDisk
+          cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
+          cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
+          chmod +x $HOME/natID/natID.Utils/macOS/x64/SetupCollector
+          $HOME/natID/natID.Utils/macOS/x64/SetupCollector $HOME/Setups/AmazonsGame.xml
+          find $HOME/natID.RAMDisk/Setup -maxdepth 4
+
+      - name: Stage installer output
+        run: |
+          mkdir -p ${{ github.workspace }}/installer-output
+          cp -R $HOME/natID.RAMDisk/Setup/ALL_Bundles/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            cp -R $HOME/natID.RAMDisk/Setup/AmazonsGame/* ${{ github.workspace }}/installer-output/ 2>/dev/null || \
+            echo "WARNING: no installer output found"
+          ls -laR ${{ github.workspace }}/installer-output/
+
+      - name: Re-sign app and clear quarantine flags
+        run: |
+          # Re-sign with ad-hoc signature (required for unsigned distribution)
+          codesign --force --deep --sign - "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify the signature
+          codesign --verify --verbose=4 "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || true
+          # Remove quarantine extended attributes that Gatekeeper checks
+          xattr -cr "${{ github.workspace }}/installer-output/GameOfTheAmazons.app"
+          # Verify quarantine is cleared (should show no output)
+          echo "=== xattr on .app after clearing ==="
+          xattr -l "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" || echo "No extended attributes (good)"
+          # Verify app bundle structure
+          echo "=== App bundle structure ==="
+          ls -la "${{ github.workspace }}/installer-output/GameOfTheAmazons.app/Contents/MacOS/"
+          # Verify executable is signed
+          codesign -dv "${{ github.workspace }}/installer-output/GameOfTheAmazons.app" 2>&1 | head -20
+
+      - name: Create distributable zip (ditto preserves exec permissions)
+        run: |
+          cd ${{ github.workspace }}/installer-output
+          ditto -c -k --keepParent --sequesterRsrc GameOfTheAmazons.app GameOfTheAmazons-macOS-Intel.zip
+          # Clear quarantine from the zip itself
+          xattr -c GameOfTheAmazons-macOS-Intel.zip
+          # Verify zip has no quarantine
+          echo "=== xattr on zip after clearing ==="
+          xattr -l GameOfTheAmazons-macOS-Intel.zip || echo "No extended attributes (good)"
+          ls -la GameOfTheAmazons-macOS-Intel.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameOfTheAmazons-macOS-Intel
+          path: installer-output/GameOfTheAmazons-macOS-Intel.zip
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git p7zip-full \
+            libgtk-4-dev libadwaita-1-dev
+
+      - name: Install natID SDK
+        run: |
+          git clone --depth 1 https://github.com/idzafic/natID.git $HOME/natID
+          ln -s $HOME/natID/natID.SDK $HOME/natID.SDK
+          ln -s $HOME/natID/natID.Utils $HOME/natID.Utils
+          # Download prebuilt Linux libs (per natID.SDK/bin/ReadMe.txt)
+          curl -L -o /tmp/sdk-bin.7z \
+            https://github.com/idzafic/natID/releases/download/v4.2.1/bin_linux_x64_20260710.7z
+          7z x -y -o$HOME/natID.SDK/bin /tmp/sdk-bin.7z
+          ls $HOME/natID.SDK/bin/lib/
+
+      - name: Place project where the collector config expects it
+        run: |
+          mkdir -p ~/Desktop
+          ln -s "$GITHUB_WORKSPACE" ~/Desktop/GameOfTheAmazons
+
+      - name: Build (Release)
+        run: |
+          cmake -S . -B $HOME/natID.RAMDisk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build $HOME/natID.RAMDisk/build -j$(nproc)
+          test -f $HOME/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame
+
+      - name: Collect installer (SetupCollector)
+        run: |
+          # EnvVariables.xml maps $RAMDisk to /media/RAMDisk on Linux.
+          # /media/RAMDisk must BE the symlink, not a dir containing it.
+          sudo rm -rf /media/RAMDisk
+          sudo ln -s $HOME/natID.RAMDisk /media/RAMDisk
+          ls -la /media/RAMDisk/Out/AmazonsGame/Release/
+          cp -r $HOME/natID/natID.SDK/DevEnv/SetupCollectors $HOME/Setups
+          cp ${{ github.workspace }}/packaging/AmazonsGame.xml $HOME/Setups/
+          chmod +x $HOME/natID/natID.Utils/linux/SetupCollector
+          $HOME/natID/natID.Utils/linux/SetupCollector $HOME/Setups/AmazonsGame.xml
+          echo "--- Setup output tree ---"
+          find $HOME/natID.RAMDisk/Setup -maxdepth 4 2>/dev/null || echo "no Setup dir"
+
+      - name: Stage installer output
+        run: |
+          mkdir -p ${{ github.workspace }}/installer-output
+          # .deb package(s) - search the whole Setup tree
+          find $HOME/natID.RAMDisk/Setup -name "*.deb" -exec cp {} ${{ github.workspace }}/installer-output/ \; || true
+          # Fallback: also check ALL_Bundles-style output
+          find $HOME/natID.RAMDisk/Setup -maxdepth 2 -type f ! -name "*.txt" -exec cp {} ${{ github.workspace }}/installer-output/ \; 2>/dev/null || true
+          ls -la ${{ github.workspace }}/installer-output/
+
+      - name: Zip deb package
+        run: |
+          cd ${{ github.workspace }}
+          zip -j GameOfTheAmazons-linux.zip installer-output/*
+          ls -la GameOfTheAmazons-linux.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameOfTheAmazons-linux
+          path: GameOfTheAmazons-linux.zip
+          if-no-files-found: error
+
+  release:
+    needs: [windows, macos-silicon, macos-intel, linux]
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'yes')
+    steps:
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "name=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | head -50
+
+      - name: Create GitHub Release with all installers
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: Game of The Amazons ${{ steps.tag.outputs.name }}
+          body: |
+            ## Downloads
+
+            | Platform | File |
+            |----------|------|
+            | 🪟 Windows | `GameOfTheAmazons-win.zip` (contains installer .exe + .msi - keep both together) |
+            | 🍎 macOS Apple Silicon | `GameOfTheAmazons-macOS-Silicon.zip` (M1/M2/M3/M4) |
+            | 🍎 macOS Intel | `GameOfTheAmazons-macOS-Intel.zip` (2016-2020 Intel Macs) |
+            | 🐧 Linux (Ubuntu 24.04+) | `GameOfTheAmazons-linux.zip` (contains .deb) |
+
+            ### Install notes
+            - **Windows**: unzip, run the .exe (or the .msi directly)
+            - **macOS**: unzip, drag `GameOfTheAmazons.app` to Applications
+              - **⚠️ IMPORTANT**: Safari auto-extracts zips on download. This re-applies the macOS quarantine flag.
+              - **After downloading and moving to Applications, you MUST run this in Terminal:**
+                ```bash
+                xattr -cr /Applications/GameOfTheAmazons.app
+                ```
+                (No output = success. Then launch normally.)
+              - If you see "damaged or incomplete", the quarantine flag wasn't cleared — run the command above.
+            - **Linux**: unzip, `sudo apt install ./AmazonsGame*.deb`
+          files: |
+            artifacts/GameOfTheAmazons-win/*
+            artifacts/GameOfTheAmazons-macOS-Silicon/*
+            artifacts/GameOfTheAmazons-macOS-Intel/*
+            artifacts/GameOfTheAmazons-linux/*

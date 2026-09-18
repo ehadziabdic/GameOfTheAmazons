@@ -1,6 +1,13 @@
 # --- Application name
 set(AMAZONS_NAME AmazonsGame)
 
+# --- SDK include root. Newer natID SDKs export NATID_SDK_INC; older ones
+#     exported MY_INC. Accept whichever this SDK defines.
+#     These globs only populate the IDE's file tree - they never affect compilation.
+if(NOT DEFINED MY_INC AND DEFINED NATID_SDK_INC)
+    set(MY_INC ${NATID_SDK_INC})
+endif()
+
 # --- Gather sources
 file(GLOB AMAZONS_SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 file(GLOB AMAZONS_INCS     ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
@@ -60,35 +67,6 @@ setTargetPropertiesForGUIApp(${AMAZONS_NAME} ${AMAZONS_PLIST})
 setAppIcon(${AMAZONS_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setIDEPropertiesForGUIExecutable(${AMAZONS_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setPlatformDLLPath(${AMAZONS_NAME})
-
-if(APPLE)
-    # Keep the macOS app bundle in this project's build directory for EVERY
-    # generator and EVERY configuration.
-    #
-    # Single-config generators (Unix Makefiles, Ninja) honour the plain
-    # *_OUTPUT_DIRECTORY properties. Multi-config generators (Xcode) ignore
-    # those and use the per-config *_OUTPUT_DIRECTORY_<CONFIG> ones, which
-    # otherwise default to build/<Config>/ — so without this loop the bundle
-    # lands in a different place depending on how it was built, and the paths
-    # in the README are only correct for one of them.
-    set(AMAZONS_BUNDLE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-
-    set_target_properties(${AMAZONS_NAME} PROPERTIES
-        MACOSX_BUNDLE TRUE
-        RUNTIME_OUTPUT_DIRECTORY "${AMAZONS_BUNDLE_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY "${AMAZONS_BUNDLE_DIR}"
-        ARCHIVE_OUTPUT_DIRECTORY "${AMAZONS_BUNDLE_DIR}"
-        XCODE_GENERATE_SCHEME TRUE
-    )
-
-    foreach(AMAZONS_CFG DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
-        set_target_properties(${AMAZONS_NAME} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY_${AMAZONS_CFG} "${AMAZONS_BUNDLE_DIR}"
-            LIBRARY_OUTPUT_DIRECTORY_${AMAZONS_CFG} "${AMAZONS_BUNDLE_DIR}"
-            ARCHIVE_OUTPUT_DIRECTORY_${AMAZONS_CFG} "${AMAZONS_BUNDLE_DIR}"
-        )
-    endforeach()
-endif()
 
 # Linux icon installation
 if(UNIX AND NOT APPLE)

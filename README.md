@@ -201,71 +201,85 @@ make -j"$(getconf _NPROCESSORS_ONLN)"
 (`nproc` is GNU coreutils and does not exist on macOS, where it silently
 degrades to an unlimited `make -j`.)
 
-### macOS (Xcode)
+### macOS (Xcode) — recommended
+
+Generate the Xcode project into a folder outside the source tree, then build and
+run inside Xcode:
 
 ```bash
-cmake -G Xcode ..
-cmake --build . --config Release
+cmake -S Implementation -B ~/build-amazons -G Xcode
+open ~/build-amazons/AmazonsGame.xcodeproj
 ```
 
-To work in the Xcode UI instead, `open AmazonsGame.xcodeproj` and select the
-**AmazonsGame** scheme (not `ALL_BUILD`) before pressing Run. Debug and Release
-both write the bundle to `Implementation/build/`.
+In Xcode: select the **AmazonsGame** scheme (not `ALL_BUILD`), then
+Product → Scheme → Edit Scheme → Run → **Build Configuration: Release**.
+⌘B to build, ⌘R to run.
+
+Xcode is a multi-configuration generator, so `-DCMAKE_BUILD_TYPE` has no effect
+on it — Debug vs Release is chosen inside Xcode, in the scheme.
+
+The same thing through the CMake GUI: *Where is the source code* → the
+`Implementation` folder; *Where to build the binaries* → any separate folder;
+**Configure** → choose the **Xcode** generator → **Generate** → **Open Project**.
 
 ### Build Output
 
-- **macOS:** `Implementation/build/AmazonsGame.app` — the same path for every
-  generator (Make, Ninja, Xcode) and every configuration.
-- **Windows:** `Implementation/build/AmazonsGame.exe`, or
-  `Implementation/out/build/<config>/` when building from inside Visual Studio.
-- **Linux:** `Implementation/build/AmazonsGame`
+**The natID SDK redirects build output away from the source tree.** The build
+folder next to the sources stays empty — this does not mean the build failed.
+The binary is written to:
 
-> **Note:** The natID SDK routes build output to the RAM disk (`$HOME/natID.RAMDisk/Out/`)
-> when configured through its DevEnv — see
-> [docs/INSTALLER_PIPELINE_GUIDE.md](docs/INSTALLER_PIPELINE_GUIDE.md) for details,
-> including how the cross-platform installers are built automatically via GitHub Actions.
+```
+~/natID.RAMDisk/Out/AmazonsGame/<Config>/AmazonsGame.app    (macOS)
+~/natID.RAMDisk/Out/AmazonsGame/<Config>/AmazonsGame.exe    (Windows)
+~/natID.RAMDisk/Out/AmazonsGame/<Config>/AmazonsGame        (Linux)
+```
+
+The exact root depends on how the SDK's DevEnv is configured on your machine
+(some setups mount a real RAM disk at `/Volumes/RAMDisk`, `R:` or
+`/media/RAMDisk`). If in doubt, locate it rather than guessing:
+
+```bash
+find ~ -name "AmazonsGame.app" -maxdepth 6 2>/dev/null     # macOS
+```
+
+Building and running from inside Xcode or Visual Studio sidesteps this
+entirely — the IDE launches whatever it just built.
 
 ## 🚀 Usage
 
 ### Running the Application
 
-After building, launch the executable:
-
-From the `Implementation/build` folder:
+The simplest route is ⌘R in Xcode or F5 in Visual Studio. To launch the built
+binary by hand, use the output path from
+[Build Output](#build-output) above:
 
 ```bash
-# Windows
-.\AmazonsGame.exe
-
 # macOS
-open ./AmazonsGame.app
+open ~/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame.app
 
 # Linux
-./AmazonsGame
+~/natID.RAMDisk/Out/AmazonsGame/Release/AmazonsGame
 ```
 
-If the bundle is not where you expect (different natID SDK version, different
-generator), locate it instead of guessing:
-
-```bash
-find . -name "AmazonsGame.app" -maxdepth 4    # macOS
-find . -name "AmazonsGame" -maxdepth 4 -type f -perm +111   # Linux
+```powershell
+# Windows
+& "$env:USERPROFILE\natID.RAMDisk\Out\AmazonsGame\Release\AmazonsGame.exe"
 ```
 
 > **macOS note:** if the app is copied from another machine or unzipped by
 > Safari, macOS quarantines it and reports "damaged or incomplete". Clear it
-> with `xattr -cr ./AmazonsGame.app`. Locally built bundles are not affected.
+> with `xattr -cr <path>/AmazonsGame.app`. Locally built bundles are not affected.
 
 ### Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `CMake Error ... include could not find ... Common.cmake` | natID SDK not at `$HOME/natID.SDK` | Install the SDK there; the error message prints the exact path it tried |
+| `CMake Error ... include could not find ... Common.cmake` | natID SDK not at `$HOME/natID.SDK` | Install it there; the error prints the exact path it tried |
+| Build folder is empty after a successful build | The SDK redirects output out of the source tree | Look under `~/natID.RAMDisk/Out/AmazonsGame/<Config>/`, or `find ~ -name "AmazonsGame.app"` |
 | `nproc: command not found` (macOS) | outdated build instructions | Use `make -j"$(getconf _NPROCESSORS_ONLN)"` |
-| `does not appear to contain CMakeLists.txt` | configured from the repo root | Configure from `Implementation/` |
+| `does not appear to contain CMakeLists.txt` | configured from the repo root | Point CMake at `Implementation/` |
 | `-G Xcode` fails | only Command Line Tools installed | Install the full Xcode app, or use the Make instructions |
-| App bundle not in `build/` | different SDK version overriding output paths | `find . -name "AmazonsGame.app"` |
-| "damaged or incomplete" | Gatekeeper quarantine on a copied bundle | `xattr -cr ./AmazonsGame.app` |
+| "damaged or incomplete" | Gatekeeper quarantine on a copied bundle | `xattr -cr <path>/AmazonsGame.app` |
 
 ### Starting a New Game
 

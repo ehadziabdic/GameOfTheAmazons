@@ -125,10 +125,11 @@ Before installing, ensure you have the following:
 - **CMake:** Version 3.18 or higher
 - **C++ Compiler:**
   - Windows: MSVC 2019 or newer / MinGW-w64
-  - macOS: Xcode Command Line Tools
+  - macOS: Xcode Command Line Tools (`xcode-select --install`). The full Xcode
+    app is required only if you want to build with the `-G Xcode` generator.
   - Linux: GCC 9+ or Clang 10+
-- **natID Framework:** Must be installed in `$HOME/`
-- **Build Tool:** Ninja (recommended) or Make
+- **natID Framework:** Must be installed so that `$HOME/natID.SDK/DevEnv/Common.cmake` exists
+- **Build Tool:** Ninja (recommended), Make, or Xcode
 
 ## 📥 Installation
 
@@ -161,16 +162,22 @@ Follow the natID installation instructions from its repository:
 git clone https://github.com/ehadziabdic/GameOfTheAmazons.git
 ```
 
-Move it into the `$HOME/Work/CPProjects` directory.
+The repository can live anywhere. The only path the build requires is the SDK
+itself at `$HOME/natID.SDK`; resource paths are resolved at configure time, so a
+fresh CMake configure works from whatever folder you cloned into.
 
 #### 3. Create Build Directory
 
+`CMakeLists.txt` lives in `Implementation/`, **not** in the repository root:
+
 ```bash
-mkdir build
-cd build
+cd GameOfTheAmazons/Implementation
+mkdir -p build && cd build
 ```
 
 ## 🔨 Building the Project
+
+All commands below are run from the `Implementation/build` folder created above.
 
 ### Windows (MSVC)
 
@@ -179,20 +186,39 @@ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ```
 
-### macOS/Linux
+Alternatively, open the `Implementation` folder in Visual Studio via
+**File → Open → Folder**. Visual Studio detects `CMakeLists.txt` and configures
+automatically. Open `Implementation`, not the repository root.
+
+### macOS / Linux (Make)
 
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j$(nproc)
+make -j"$(getconf _NPROCESSORS_ONLN)"
 ```
+
+`getconf _NPROCESSORS_ONLN` reports the CPU count on both macOS and Linux.
+(`nproc` is GNU coreutils and does not exist on macOS, where it silently
+degrades to an unlimited `make -j`.)
+
+### macOS (Xcode)
+
+```bash
+cmake -G Xcode ..
+cmake --build . --config Release
+```
+
+To work in the Xcode UI instead, `open AmazonsGame.xcodeproj` and select the
+**AmazonsGame** scheme (not `ALL_BUILD`) before pressing Run. Debug and Release
+both write the bundle to `Implementation/build/`.
 
 ### Build Output
 
-After successful compilation, the executable will be located in:
-
-- Windows: `build/AmazonsGame.exe`
-- macOS: `build/AmazonsGame.app`
-- Linux: `build/AmazonsGame`
+- **macOS:** `Implementation/build/AmazonsGame.app` — the same path for every
+  generator (Make, Ninja, Xcode) and every configuration.
+- **Windows:** `Implementation/build/AmazonsGame.exe`, or
+  `Implementation/out/build/<config>/` when building from inside Visual Studio.
+- **Linux:** `Implementation/build/AmazonsGame`
 
 > **Note:** The natID SDK routes build output to the RAM disk (`$HOME/natID.RAMDisk/Out/`)
 > when configured through its DevEnv — see
@@ -205,16 +231,41 @@ After successful compilation, the executable will be located in:
 
 After building, launch the executable:
 
+From the `Implementation/build` folder:
+
 ```bash
 # Windows
-.\build\AmazonsGame.exe
+.\AmazonsGame.exe
 
 # macOS
-open build/AmazonsGame.app
+open ./AmazonsGame.app
 
 # Linux
-./build/AmazonsGame
+./AmazonsGame
 ```
+
+If the bundle is not where you expect (different natID SDK version, different
+generator), locate it instead of guessing:
+
+```bash
+find . -name "AmazonsGame.app" -maxdepth 4    # macOS
+find . -name "AmazonsGame" -maxdepth 4 -type f -perm +111   # Linux
+```
+
+> **macOS note:** if the app is copied from another machine or unzipped by
+> Safari, macOS quarantines it and reports "damaged or incomplete". Clear it
+> with `xattr -cr ./AmazonsGame.app`. Locally built bundles are not affected.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `CMake Error ... include could not find ... Common.cmake` | natID SDK not at `$HOME/natID.SDK` | Install the SDK there; the error message prints the exact path it tried |
+| `nproc: command not found` (macOS) | outdated build instructions | Use `make -j"$(getconf _NPROCESSORS_ONLN)"` |
+| `does not appear to contain CMakeLists.txt` | configured from the repo root | Configure from `Implementation/` |
+| `-G Xcode` fails | only Command Line Tools installed | Install the full Xcode app, or use the Make instructions |
+| App bundle not in `build/` | different SDK version overriding output paths | `find . -name "AmazonsGame.app"` |
+| "damaged or incomplete" | Gatekeeper quarantine on a copied bundle | `xattr -cr ./AmazonsGame.app` |
 
 ### Starting a New Game
 
